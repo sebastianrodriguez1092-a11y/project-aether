@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROJECT AETHER — Vertical Slice 001</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070b;font-family:Inter,system-ui,Arial;color:#fff}
+#game{width:100%;height:100%;display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+#title{position:absolute;top:18px;left:22px;letter-spacing:3px;font-size:14px;font-weight:700;text-shadow:0 2px 8px #000}
+#objective{position:absolute;top:48px;left:22px;color:#d9e4ff;font-size:13px}
+#healthWrap{position:absolute;left:22px;bottom:24px;width:250px}
+#healthLabel{font-size:12px;margin-bottom:5px;text-shadow:0 2px 5px #000}
+#healthBg{height:9px;background:#181d27;border:1px solid #566070;border-radius:6px;overflow:hidden}
+#health{height:100%;width:100%;background:linear-gradient(90deg,#6b1824,#d94a5c)}
+#cross{position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%)}
+#cross:before,#cross:after{content:"";position:absolute;background:#fff;opacity:.9}
+#cross:before{left:4px;top:0;width:2px;height:10px}
+#cross:after{left:0;top:4px;width:10px;height:2px}
+#prompt{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);padding:9px 14px;background:#090d14cc;border:1px solid #667187;border-radius:8px;font-size:13px;display:none}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#172238cc,#030509f2);pointer-events:auto}
+.card{width:min(520px,88vw);padding:30px;border:1px solid #64718a;border-radius:16px;background:#080c14ee;box-shadow:0 25px 80px #000}
+h1{margin:0 0 8px;font-size:34px;letter-spacing:5px}
+.sub{color:#aebbd1;margin-bottom:20px;line-height:1.5}
+button{border:0;border-radius:8px;padding:12px 18px;background:#d7e3ff;color:#08101d;font-weight:800;cursor:pointer}
+.small{margin-top:16px;color:#7e8ba2;font-size:12px;line-height:1.5}
+#damage{position:absolute;inset:0;background:#ff243533;opacity:0;transition:opacity .12s}
+
+/* MOBILE CONTROL LAYER */
+#mobileUI{display:none;position:fixed;inset:0;pointer-events:none}
+#joyBase{position:absolute;left:24px;bottom:28px;width:118px;height:118px;border-radius:50%;
+  background:#ffffff18;border:1px solid #ffffff35;pointer-events:auto;touch-action:none}
+#joyKnob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;
+  background:#dbe7ff55;border:1px solid #ffffff66}
+#lookZone{position:absolute;right:0;top:0;width:65%;height:70%;pointer-events:auto;touch-action:none}
+#attackBtn{position:absolute;right:26px;bottom:35px;width:86px;height:86px;border-radius:50%;
+  background:#cbd9ff33;border:2px solid #dce8ff99;color:white;font-weight:800;pointer-events:auto;touch-action:none}
+#jumpBtn{position:absolute;right:122px;bottom:40px;width:58px;height:58px;border-radius:50%;
+  background:#ffffff18;border:1px solid #ffffff55;color:white;pointer-events:auto;touch-action:none}
+#mobileHint{position:absolute;left:50%;top:12px;transform:translateX(-50%);font-size:11px;
+  color:#dce6fa;background:#080c14aa;padding:7px 10px;border-radius:8px}
+@media (max-width:800px){
+  #mobileUI{display:block}
+  #title{font-size:10px;letter-spacing:2px;top:10px;left:12px}
+  #objective{font-size:10px;top:30px;left:12px;max-width:230px}
+  #healthWrap{left:12px;bottom:14px;width:180px}
+  #cross{width:8px;height:8px}
+  #cross:before{left:3px;width:2px;height:8px}
+  #cross:after{top:3px;width:8px;height:2px}
+  .card{padding:22px;width:78vw}
+  h1{font-size:28px}
+  #start .small{font-size:11px}
+}
+
+
+#enemyHud{position:absolute;left:50%;top:18%;transform:translateX(-50%);width:230px;text-align:center;display:none;text-shadow:0 2px 6px #000}
+#enemyName{font-size:11px;letter-spacing:2px;margin-bottom:5px}
+#enemyBg{height:7px;background:#151821;border:1px solid #596274;border-radius:5px;overflow:hidden}
+#enemyHp{height:100%;width:100%;background:linear-gradient(90deg,#ff3155,#a80f34)}
+#staminaWrap{position:absolute;left:22px;bottom:8px;width:180px}
+#staminaBg{height:4px;background:#202631;border-radius:4px;overflow:hidden}
+#stamina{height:100%;width:100%;background:#74b8ff}
+#combo{position:absolute;right:22px;bottom:28px;font-weight:800;font-size:16px;opacity:0;text-shadow:0 2px 8px #000}
+#message{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);font-size:22px;font-weight:800;letter-spacing:2px;text-align:center;text-shadow:0 3px 12px #000;opacity:0;transition:opacity .25s}
+
+
+#raceSelect{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+background:radial-gradient(circle at 50% 20%,#1c2942 0,#070b13 55%,#020306 100%);padding:14px;overflow:auto}
+.racePanel{width:min(1120px,97vw);max-height:94vh;overflow:auto;background:#070b12f5;border:1px solid #66748d;border-radius:18px;padding:20px;box-shadow:0 35px 120px #000}
+.raceTop{display:flex;justify-content:space-between;gap:18px;align-items:end;margin-bottom:15px}
+.raceTop h2{margin:0;font-size:28px;letter-spacing:4px}.raceTop p{margin:5px 0 0;color:#91a2bd;font-size:12px}
+.raceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.raceCard{min-height:285px;border:1px solid #364256;border-radius:13px;overflow:hidden;background:#0b1019;cursor:pointer;transition:.18s}
+.raceCard:hover,.raceCard.selected{transform:translateY(-3px);border-color:#c3d1ee;box-shadow:0 12px 34px #0009}
+.raceArt{height:145px;position:relative;background:linear-gradient(150deg,var(--a),#070a10)}
+.raceFigure{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:100px;height:145px}
+.raceFigure .rfHead{position:absolute;left:31px;top:2px;width:38px;height:45px;border-radius:48%;background:var(--skin)}
+.raceFigure .rfBody{position:absolute;left:17px;bottom:0;width:66px;height:95px;border-radius:25px 25px 9px 9px;background:var(--cloth);box-shadow:0 0 30px var(--glow)}
+.raceFigure .rfCloak{position:absolute;left:4px;bottom:0;width:92px;height:105px;clip-path:polygon(27% 0,73% 0,100% 100%,0 100%);background:var(--cloak);opacity:.82}
+.raceFigure .rfMark{position:absolute;left:47px;top:48px;width:8px;height:8px;border-radius:50%;background:#9deaff;box-shadow:0 0 16px #69e8ff}
+.raceInfo{padding:12px}.raceInfo h3{margin:0 0 3px}.raceInfo .tag{font-size:10px;letter-spacing:1.5px;color:#9fb0c9}.raceInfo p{font-size:11px;line-height:1.45;color:#7f8ea6;margin:8px 0 0}
+.raceDetails{margin-top:12px;border:1px solid #303c50;border-radius:10px;padding:12px;color:#aab9d0;min-height:55px;font-size:12px;line-height:1.5}
+#raceContinue{display:none;margin-top:12px;width:100%;padding:13px;border:0;border-radius:9px;background:#dce7ff;color:#07101e;font-weight:900}
+#loreTitle{font-weight:800;color:#dbe6ff;margin-bottom:3px}
+
+
+#classSelect{position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 20%,#18243b,#050810 60%,#020307);padding:14px;overflow:auto}
+.classPanel{width:min(1050px,96vw);max-height:94vh;overflow:auto;background:#080c14f5;border:1px solid #66748d;border-radius:18px;padding:20px;box-shadow:0 30px 100px #000}
+.classGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.classCard{min-height:285px;border:1px solid #384458;border-radius:13px;overflow:hidden;background:#0b1019;cursor:pointer;transition:.18s}
+.classCard:hover,.classCard.selected{transform:translateY(-3px);border-color:#c3d1ee;box-shadow:0 12px 34px #0009}
+.classArt{height:145px;position:relative;background:linear-gradient(150deg,var(--a),#070a10)}
+.classFigure{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:100px;height:145px}
+.classFigure div{position:absolute}.cfHead{left:31px;top:2px;width:38px;height:45px;border-radius:48%;background:#bd825f}
+.cfBody{left:17px;bottom:0;width:66px;height:95px;border-radius:25px 25px 9px 9px;background:var(--c);box-shadow:0 0 30px var(--g)}
+.cfCloak{left:4px;bottom:0;width:92px;height:105px;clip-path:polygon(27% 0,73% 0,100% 100%,0 100%);background:var(--c2);opacity:.82}
+.cfWeapon{right:-12px;bottom:10px;width:8px;height:105px;border-radius:5px;background:#dce8ff;transform:rotate(24deg);box-shadow:0 0 12px #8fc5ff}
+.classInfo{padding:12px}.classInfo h3{margin:0 0 3px}.classInfo .tag{font-size:10px;letter-spacing:1.4px;color:#9fb0c9}.classInfo p{font-size:11px;line-height:1.45;color:#7f8ea6;margin:8px 0}
+.classDetails{margin-top:12px;border:1px solid #303c50;border-radius:10px;padding:12px;color:#aab9d0;font-size:12px;line-height:1.5;text-align:center}
+#classContinue{display:none;margin-top:12px;width:100%;padding:13px;border:0;border-radius:9px;background:#dce7ff;color:#07101e;font-weight:900}
+@media(max-width:800px){.classGrid{grid-template-columns:repeat(2,1fr)}.classPanel{padding:15px}.classArt{height:125px}.classCard{min-height:270px}}
+
+</style>
+</head>
+<body style="touch-action:none;user-select:none;-webkit-user-select:none">
+<canvas id="game"></canvas>
+<div id="hud">
+<div id="enemyHud"><div id="enemyName">GUARDIÁN DE LA GRIETA</div><div id="enemyBg"><div id="enemyHp"></div></div></div>
+<div id="staminaWrap"><div id="staminaBg"><div id="stamina"></div></div></div>
+<div id="combo">COMBO x1</div>
+<div id="message"></div>
+
+  <div id="title">PROJECT AETHER · VERTICAL SLICE 001</div>
+  <div id="objective">OBJETIVO · Llega a la Puerta de Obsidiana</div>
+  <div id="cross"></div>
+  <div id="prompt"></div>
+  <div id="damage"></div>
+  <div id="healthWrap"><div id="healthLabel">VITALIDAD</div><div id="healthBg"><div id="health"></div></div></div>
+</div>
+<div id="start">
+  <div class="card">
+    <h1>AETHER</h1>
+    <div class="sub">Vertical Slice 002 · Núcleo jugable móvil del RPG de acción en primera persona. Explora las ruinas, sobrevive al guardián y alcanza la Puerta de Obsidiana.</div>
+    <button id="startBtn">ENTRAR AL MUNDO</button>
+    <div class="small">WASD · mover &nbsp; SHIFT · correr &nbsp; ESPACIO · saltar &nbsp; CLICK · atacar &nbsp; ESC · liberar cursor</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import {PointerLockControls} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/PointerLockControls.js";
+import {EffectComposer} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/EffectComposer.js";
+import {RenderPass} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/RenderPass.js";
+import {UnrealBloomPass} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+
+const canvas=document.getElementById("game");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x070b13);
+scene.fog=new THREE.FogExp2(0x0b1220,0.012);
+
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
+camera.position.set(0,2.1,18);
+
+const controls=new PointerLockControls(camera,document.body);
+scene.add(camera);
+
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.45,0.65,0.82);
+composer.addPass(bloom);
+
+const hemi=new THREE.HemisphereLight(0x9db7e8,0x171b20,1.15);
+scene.add(hemi);
+const moon=new THREE.DirectionalLight(0xb9ccff,2.3);
+moon.position.set(-30,45,20); moon.castShadow=true;
+moon.shadow.mapSize.set(2048,2048);
+moon.shadow.camera.left=-70;moon.shadow.camera.right=70;moon.shadow.camera.top=70;moon.shadow.camera.bottom=-70;
+scene.add(moon);
+
+const warm=new THREE.PointLight(0xffa45b,20,30,2);
+warm.position.set(-3,4,2);scene.add(warm);
+
+const matGround=new THREE.MeshStandardMaterial({color:0x20252b,roughness:.96,metalness:.02});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),matGround);
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+function box(x,y,z,sx,sy,sz,mat=matGround){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat);
+  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+const stone=new THREE.MeshStandardMaterial({color:0x39404a,roughness:.88,metalness:.08});
+const darkStone=new THREE.MeshStandardMaterial({color:0x171b22,roughness:.72,metalness:.25});
+const crystal=new THREE.MeshStandardMaterial({color:0x5a8cff,emissive:0x244cff,emissiveIntensity:3.5,roughness:.2,metalness:.15});
+
+for(let i=0;i<24;i++){
+  const a=Math.random()*Math.PI*2,r=35+Math.random()*40;
+  const s=.8+Math.random()*2.8;
+  const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(s,1),stone);
+  rock.position.set(Math.cos(a)*r,s*.55,Math.sin(a)*r);
+  rock.scale.y=.55+Math.random()*.8;rock.castShadow=true;rock.receiveShadow=true;scene.add(rock);
+}
+
+// Ruined walls / arches
+for(let z=-8;z>-48;z-=8){
+  box(-10,2,z,2.2,4,7,stone);
+  box(10,2,z,2.2,4,7,stone);
+  box(-6,3,z-3,5,1.4,1.3,stone);
+  box(6,3,z-3,5,1.4,1.3,stone);
+}
+box(0,3,-53,24,6,2,darkStone);
+box(-9,6,-53,4,12,4,darkStone);
+box(9,6,-53,4,12,4,darkStone);
+
+// Obsidian gate
+box(-6,7,-54,3,14,3,darkStone);box(6,7,-54,3,14,3,darkStone);
+box(0,13,-54,15,3,3,darkStone);
+const gateGlow=new THREE.MeshStandardMaterial({color:0x172b4d,emissive:0x164cff,emissiveIntensity:2.5,metalness:.5,roughness:.25});
+box(0,6,-54,9,12,.8,gateGlow);
+const gateLight=new THREE.PointLight(0x3478ff,28,22,2);gateLight.position.set(0,6,-50);scene.add(gateLight);
+
+// Trees
+const trunkMat=new THREE.MeshStandardMaterial({color:0x2b211b,roughness:1});
+const leafMat=new THREE.MeshStandardMaterial({color:0x18362c,roughness:.95});
+for(let i=0;i<22;i++){
+  const a=Math.random()*Math.PI*2,r=13+Math.random()*38,x=Math.cos(a)*r,z=Math.sin(a)*r;
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.28,.55,5+Math.random()*4,7),trunkMat);
+  trunk.position.set(x,(trunk.geometry.parameters.height/2),z);trunk.castShadow=true;scene.add(trunk);
+  for(let j=0;j<3;j++){
+    const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(1.5+Math.random()*1.7,1),leafMat);
+    crown.position.set(x+(Math.random()-.5)*1.8,4+j*1.1,z+(Math.random()-.5)*1.8);
+    crown.castShadow=true;scene.add(crown);
+  }
+}
+
+// Crystal clusters
+for(let i=0;i<18;i++){
+  const a=Math.random()*Math.PI*2,r=7+Math.random()*38;
+  const c=new THREE.Mesh(new THREE.ConeGeometry(.25+Math.random()*.35,1.5+Math.random()*2.2,6),crystal);
+  c.position.set(Math.cos(a)*r,.8,Math.sin(a)*r-10);
+  c.rotation.z=(Math.random()-.5)*.35;c.castShadow=true;scene.add(c);
+}
+
+// Fire particles
+const fireMat=new THREE.MeshBasicMaterial({color:0xffb05e});
+for(const p of [[-3,1,2],[3,1,-18],[-10,1,-30],[10,1,-30]]){
+  const f=new THREE.Mesh(new THREE.SphereGeometry(.22,8,8),fireMat);
+  f.position.set(...p);scene.add(f);
+  const l=new THREE.PointLight(0xff8a45,12,9,2);l.position.copy(f.position);scene.add(l);
+}
+
+// Player physics
+const keys={};
+let vy=0,onGround=true,health=100,attackCooldown=0;
+const clock=new THREE.Clock();
+addEventListener("keydown",e=>{keys[e.code]=true;if(e.code==="Space"&&onGround){vy=7;onGround=false}});
+addEventListener("keyup",e=>keys[e.code]=false);
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
+document.getElementById("startBtn").onclick=()=>controls.lock();
+controls.addEventListener("lock",()=>document.getElementById("start").style.display="none");
+controls.addEventListener("unlock",()=>document.getElementById("start").style.display="flex");
+
+// Enemy
+const enemyMat=new THREE.MeshStandardMaterial({color:0x34233d,roughness:.65,metalness:.15});
+const eyeMat=new THREE.MeshBasicMaterial({color:0xff3c62});
+const enemy={group:new THREE.Group(),hp:100,pos:new THREE.Vector3(0,0,-30),hitFlash:0,dead:false};
+const body=new THREE.Mesh(new THREE.CapsuleGeometry(.75,1.3,5,10),enemyMat);body.position.y=1.35;body.castShadow=true;enemy.group.add(body);
+const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.7,1),enemyMat);head.position.y=2.6;head.castShadow=true;enemy.group.add(head);
+for(const x of [-.25,.25]){const e=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),eyeMat);e.position.set(x,2.65,-.62);enemy.group.add(e)}
+enemy.group.position.copy(enemy.pos);scene.add(enemy.group);
+const enemyLight=new THREE.PointLight(0xff1f55,5,8,2);enemyLight.position.set(0,2.4,0);enemy.group.add(enemyLight);
+
+const healthEl=document.getElementById("health");
+const prompt=document.getElementById("prompt"),damage=document.getElementById("damage");
+function setHealth(v){health=Math.max(0,Math.min(100,v));healthEl.style.width=health+"%";if(health<=0){prompt.style.display="block";prompt.textContent="Has caído. Pulsa R para reiniciar.";}}
+addEventListener("keydown",e=>{if(e.code==="KeyR"&&health<=0)location.reload()});
+
+let comboCount=0, comboTimer=0, stamina=100, lastAttack=0;
+const enemyHpEl=document.getElementById("enemyHp"), enemyHud=document.getElementById("enemyHud");
+const comboEl=document.getElementById("combo"), staminaEl=document.getElementById("stamina"), messageEl=document.getElementById("message");
+
+function flashMessage(t){
+  messageEl.textContent=t; messageEl.style.opacity=1;
+  clearTimeout(flashMessage.t); flashMessage.t=setTimeout(()=>messageEl.style.opacity=0,1200);
+}
+function attack(){
+  if((!controls.isLocked && !mobileActive()) || attackCooldown>0 || enemy.dead || stamina<14)return;
+  attackCooldown=.32; stamina-=14;
+  const now=performance.now();
+  comboCount=(now-lastAttack<850)?Math.min(comboCount+1,5):1; lastAttack=now; comboTimer=.9;
+  comboEl.textContent="COMBO x"+comboCount; comboEl.style.opacity=1;
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+  const to=enemy.group.position.clone().sub(camera.position),dist=to.length();to.normalize();
+  if(dist<3.5 && dir.dot(to)>.48){
+    const damageValue=26+comboCount*7;
+    enemy.hp-=damageValue; enemy.hitFlash=.16;
+    enemyHpEl.style.width=Math.max(0,enemy.hp)+"%";
+    enemy.group.position.addScaledVector(dir,.28);
+    flashMessage("IMPACTO  −"+damageValue);
+    if(enemy.hp<=0){
+      enemy.dead=true; enemyHud.style.display="none";
+      flashMessage("GUARDIÁN VENCIDO");
+      gateGlow.emissiveIntensity=5;
+      for(let i=0;i<12;i++){
+        const s=new THREE.Mesh(new THREE.SphereGeometry(.08+Math.random()*.08,6,6),crystal);
+        s.position.copy(enemy.group.position);s.userData.v=new THREE.Vector3((Math.random()-.5)*5,Math.random()*5,(Math.random()-.5)*5);
+        scene.add(s); effects.push(s);
+      }
+    }
+  }
+}
+addEventListener("mousedown",attack);
+
+
+const effects=[];
+function updateEffects(dt){
+  for(let i=effects.length-1;i>=0;i--){
+    const s=effects[i];s.position.addScaledVector(s.userData.v,dt);s.userData.v.y-=7*dt;
+    s.scale.multiplyScalar(.985);
+    if(s.position.y<0){scene.remove(s);effects.splice(i,1)}
+  }
+}
+
+function enemyAI(dt){
+  if(enemy.dead)return;
+  const dist=enemy.group.position.distanceTo(camera.position);
+  if(dist<16){
+    const d=camera.position.clone().sub(enemy.group.position);d.y=0;
+    if(d.length()>2.3){d.normalize();enemy.group.position.addScaledVector(d,dt*2.25);enemy.group.lookAt(camera.position.x,enemy.group.position.y,camera.position.z)}
+    if(dist<2.6 && Math.random()<dt*.9){setHealth(health-8);damage.style.opacity=.8;setTimeout(()=>damage.style.opacity=0,90)}
+  }
+}
+
+function update(dt){
+  if(!controls.isLocked)return;
+  const speed=keys.ShiftLeft||keys.ShiftRight?8.5:5.2;
+  const dir=new THREE.Vector3();
+  if(keys.KeyW)dir.z-=1;if(keys.KeyS)dir.z+=1;if(keys.KeyA)dir.x-=1;if(keys.KeyD)dir.x+=1;
+  dir.normalize();controls.moveRight(dir.x*speed*dt);controls.moveForward(-dir.z*speed*dt);
+  vy-=18*dt;camera.position.y+=vy*dt;
+  if(camera.position.y<=2.1){camera.position.y=2.1;vy=0;onGround=true}
+  camera.position.x=Math.max(-14,Math.min(14,camera.position.x));
+  camera.position.z=Math.max(-52,Math.min(22,camera.position.z));
+  attackCooldown=Math.max(0,attackCooldown-dt);
+  stamina=Math.min(100,stamina+dt*24); staminaEl.style.width=stamina+"%";
+  comboTimer-=dt; if(comboTimer<=0){comboCount=0;comboEl.style.opacity=0}
+  const enemyDistance=enemy.group.position.distanceTo(camera.position);
+  if(!enemy.dead && enemyDistance<12){enemyHud.style.display="block";enemyHpEl.style.width=Math.max(0,enemy.hp)+"%"}
+  else enemyHud.style.display="none";
+  updateEffects(dt);
+  enemyAI(dt);
+  if(enemy.hitFlash>0){enemy.hitFlash-=dt;enemyMat.emissive.setHex(0x7d1730);enemyMat.emissiveIntensity=3}else{enemyMat.emissive.setHex(0x000000);enemyMat.emissiveIntensity=0}
+  const nearGate=camera.position.z<-48;
+  if(nearGate&&!enemy.dead){prompt.style.display="block";prompt.textContent="La Puerta rechaza tu presencia. Derrota al Guardián."}
+  else if(nearGate&&enemy.dead){prompt.style.display="block";prompt.textContent="HAS ALCANZADO LA PUERTA · Vertical Slice 001 completado."}
+  else if(controls.isLocked&&prompt.textContent!==""){prompt.style.display="none"}
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),.05);
+  update(dt);
+  composer.render();
+}
+loop();
+
+// MOBILE INPUT
+const mobileUI=document.getElementById("mobileUI");
+const joyBase=document.getElementById("joyBase"), joyKnob=document.getElementById("joyKnob");
+const lookZone=document.getElementById("lookZone"), attackBtn=document.getElementById("attackBtn"), jumpBtn=document.getElementById("jumpBtn");
+let joyId=null, lookId=null, joyX=0, joyY=0, lastLX=0,lastLY=0;
+
+function mobileActive(){return innerWidth<=800 || ("ontouchstart" in window)}
+if(mobileActive()) mobileUI.style.display="block";
+
+function joyMove(e){
+  const r=joyBase.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let x=e.clientX-cx,y=e.clientY-cy, max=42, d=Math.hypot(x,y);
+  if(d>max){x=x/d*max;y=y/d*max}
+  joyX=x/max; joyY=y/max;
+  joyKnob.style.transform=`translate(${x}px,${y}px)`;
+}
+joyBase.addEventListener("pointerdown",e=>{joyId=e.pointerId;joyBase.setPointerCapture(joyId);joyMove(e)});
+joyBase.addEventListener("pointermove",e=>{if(e.pointerId===joyId)joyMove(e)});
+function joyEnd(e){if(e.pointerId!==joyId)return;joyId=null;joyX=joyY=0;joyKnob.style.transform=""}
+joyBase.addEventListener("pointerup",joyEnd);joyBase.addEventListener("pointercancel",joyEnd);
+
+lookZone.addEventListener("pointerdown",e=>{lookId=e.pointerId;lastLX=e.clientX;lastLY=e.clientY;lookZone.setPointerCapture(lookId)});
+lookZone.addEventListener("pointermove",e=>{
+  if(e.pointerId!==lookId)return;
+  const dx=e.clientX-lastLX,dy=e.clientY-lastLY;lastLX=e.clientX;lastLY=e.clientY;
+  camera.rotation.y-=dx*.0045;
+  camera.rotation.x-=dy*.0035;
+  camera.rotation.x=Math.max(-1.45,Math.min(1.45,camera.rotation.x));
+});
+lookZone.addEventListener("pointerup",e=>{if(e.pointerId===lookId)lookId=null});
+lookZone.addEventListener("pointercancel",e=>{if(e.pointerId===lookId)lookId=null});
+
+attackBtn.addEventListener("pointerdown",e=>{e.preventDefault();attack()});
+jumpBtn.addEventListener("pointerdown",e=>{e.preventDefault();if(onGround){vy=7;onGround=false}});
+
+// Patch movement for touch joystick
+const originalUpdate=update;
+update=function(dt){
+  if(mobileActive() && !controls.isLocked){
+    // Touch mode does not require Pointer Lock.
+    const speed=joyX||joyY ? 5.2 : 0;
+    const dir=new THREE.Vector3(joyX,0,joyY);
+    if(dir.lengthSq()>0)dir.normalize();
+    const forward=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);forward.y=0;forward.normalize();
+    const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);right.y=0;right.normalize();
+    camera.position.addScaledVector(right,joyX*speed*dt);
+    camera.position.addScaledVector(forward,-joyY*speed*dt);
+    vy-=18*dt;camera.position.y+=vy*dt;
+    if(camera.position.y<=2.1){camera.position.y=2.1;vy=0;onGround=true}
+    camera.position.x=Math.max(-14,Math.min(14,camera.position.x));
+    camera.position.z=Math.max(-52,Math.min(22,camera.position.z));
+    attackCooldown=Math.max(0,attackCooldown-dt);
+    stamina=Math.min(100,stamina+dt*24); staminaEl.style.width=stamina+"%";
+    comboTimer-=dt; if(comboTimer<=0){comboCount=0;comboEl.style.opacity=0}
+    const enemyDistance=enemy.group.position.distanceTo(camera.position);
+    if(!enemy.dead && enemyDistance<12){enemyHud.style.display="block";enemyHpEl.style.width=Math.max(0,enemy.hp)+"%"}
+    else enemyHud.style.display="none";
+    updateEffects(dt);
+    enemyAI(dt);
+    if(enemy.hitFlash>0){enemy.hitFlash-=dt;enemyMat.emissive.setHex(0x7d1730);enemyMat.emissiveIntensity=3}
+    else{enemyMat.emissive.setHex(0x000000);enemyMat.emissiveIntensity=0}
+    const nearGate=camera.position.z<-48;
+    if(nearGate&&!enemy.dead){prompt.style.display="block";prompt.textContent="La Puerta rechaza tu presencia. Derrota al Guardián."}
+    else if(nearGate&&enemy.dead){prompt.style.display="block";prompt.textContent="HAS ALCANZADO LA PUERTA · Vertical Slice 001 completado."}
+    else prompt.style.display="none";
+    return;
+  }
+  originalUpdate(dt);
+};
+
+// Mobile start: use the start screen button without pointer lock.
+const oldStart=document.getElementById("startBtn").onclick;
+document.getElementById("startBtn").onclick=()=>{
+  document.getElementById("start").style.display="none";
+  mobileUI.style.display=mobileActive()?"block":"none";
+  raceSelect.style.display="flex";
+};
+
+
+// RACE SELECTION / LORE
+const raceSelect=document.getElementById("raceSelect");
+const raceCards=[...document.querySelectorAll(".raceCard")];
+const loreTitle=document.getElementById("loreTitle"),loreText=document.getElementById("loreText"),raceContinue=document.getElementById("raceContinue");
+const raceLore={
+"Aurelio":["Aurelio · Los constructores","Tu pueblo cree que la civilización sobrevivió porque aprendió a dominar la Grieta. Pero los archivos reales tienen páginas arrancadas."],
+"Sylvar":["Sylvar · La memoria verde","Los árboles de Narai guardan ecos de personas que todavía viven. Tu pueblo sabe que algo está intentando regresar."],
+"Dravak":["Dravak · El corazón bajo la montaña","Los mineros de Karth han encontrado una puerta bajo kilómetros de roca. Al otro lado se escucha una ciudad respirando."],
+"Velari":["Velari · La marca","Tu cuerpo reacciona ante lugares tocados por la Fractura. Otros Velari desaparecieron intentando descubrir por qué."],
+"Varkyn":["Varkyn · Los que sobrevivieron","Varken fue destruida y los vencedores escribieron la historia. Los Varkyn conservan una versión distinta, transmitida en secreto."],
+"Aethari":["Aethari · Antes del mundo","Nadie sabe si los Aethari fueron creadores, guardianes o prisioneros de la Grieta. Algunas ruinas parecen reconocer tu presencia."]
+};
+let selectedRace=null;
+raceCards.forEach(card=>card.addEventListener("click",()=>{
+ raceCards.forEach(c=>c.classList.remove("selected"));card.classList.add("selected");
+ selectedRace=card.dataset.race;loreTitle.textContent=raceLore[selectedRace][0];loreText.textContent=raceLore[selectedRace][1];
+ raceContinue.style.display="block";
+}));
+raceContinue.addEventListener("click",()=>{
+ raceSelect.style.display="none";
+ document.getElementById("classSelect").style.display="flex";
+});
+
+
+const classSelect=document.getElementById("classSelect");
+const classCards=[...document.querySelectorAll(".classCard")];
+const classDetails=document.getElementById("classDetails");
+const classContinue=document.getElementById("classContinue");
+const classText={
+"Arcane Knight":"El Caballero Arcano comienza equilibrado entre acero y magia. Puede evolucionar hacia un duelista mágico o un guerrero de la Grieta.",
+"Shadow Hunter":"El Cazador de Sombras empieza con movilidad superior y ataques a distancia. Sus decisiones pueden llevarlo hacia cazador, asesino o explorador.",
+"Veil Disciple":"El Discípulo del Velo domina la energía inestable. Su poder es alto, pero abusar de él puede alterar recuerdos y relaciones.",
+"Grave Warden":"El Guardián de Ceniza resiste más daño y utiliza maldiciones. Puede convertirse en protector, verdugo o portador de una corrupción."
+};
+let selectedClass=null;
+classCards.forEach(c=>c.addEventListener("click",()=>{
+ classCards.forEach(x=>x.classList.remove("selected"));c.classList.add("selected");
+ selectedClass=c.dataset.class;classDetails.textContent=classText[selectedClass];classContinue.style.display="block";
+}));
+classContinue.addEventListener("click",()=>{
+ classSelect.style.display="none";
+ if(typeof flashMessage==="function")flashMessage("ORIGEN: "+(selectedRace||"DESCONOCIDO")+" · CLASE: "+selectedClass);
+});
+
+</script>
+
+<div id="mobileUI">
+  <div id="mobileHint">Arrastra la derecha para mirar · joystick para moverte</div>
+  <div id="lookZone"></div>
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <button id="jumpBtn">↑</button>
+  <button id="attackBtn">ATK</button>
+</div>
+
+
+<div id="raceSelect">
+  <div class="racePanel">
+    <div class="raceTop"><div><h2>ORIGEN DEL PERSONAJE</h2><p>Elige una raza. No elige tu destino: solamente el lugar desde donde comienza.</p></div></div>
+    <div class="raceGrid">
+      <div class="raceCard" data-race="Aurelio">
+        <div class="raceArt" style="--a:#263854"><div class="raceFigure" style="--skin:#bd825f;--cloth:#536984;--cloak:#202d42;--glow:#648aff"><div class="rfHead"></div><div class="rfCloak"></div><div class="rfBody"></div></div></div>
+        <div class="raceInfo"><h3>Aurelio</h3><div class="tag">HUMANOS · AURELIA</div><p>Constructores de reinos y guardianes de las fronteras. Creen que la Grieta puede ser controlada.</p></div>
+      </div>
+      <div class="raceCard" data-race="Sylvar">
+        <div class="raceArt" style="--a:#173d32"><div class="raceFigure" style="--skin:#8fc09b;--cloth:#3b765e;--cloak:#17382e;--glow:#4bffb2"><div class="rfHead"></div><div class="rfCloak"></div><div class="rfBody"></div><div class="rfMark"></div></div></div>
+        <div class="raceInfo"><h3>Sylvar</h3><div class="tag">HIJOS DEL BOSQUE · NARAI</div><p>Seres marcados por la memoria de los bosques. Algunos recuerdan cosas que todavía no han ocurrido.</p></div>
+      </div>
+      <div class="raceCard" data-race="Dravak">
+        <div class="raceArt" style="--a:#4a241c"><div class="raceFigure" style="--skin:#a65c3c;--cloth:#70382c;--cloak:#351711;--glow:#ff7038"><div class="rfHead"></div><div class="rfCloak"></div><div class="rfBody"></div></div></div>
+        <div class="raceInfo"><h3>Dravak</h3><div class="tag">NACIDOS DEL FUEGO · KARTH</div><p>Mineros y guerreros de las montañas volcánicas. Su sangre lleva minerales transformados por la Grieta.</p></div>
+      </div>
+      <div class="raceCard" data-race="Velari">
+        <div class="raceArt" style="--a:#32244d"><div class="raceFigure" style="--skin:#c19ab5;--cloth:#684a78;--cloak:#241b38;--glow:#bd7aff"><div class="rfHead"></div><div class="rfCloak"></div><div class="rfBody"></div><div class="rfMark"></div></div></div>
+        <div class="raceInfo"><h3>Velari</h3><div class="tag">LOS MARCADOS</div><p>Descendientes de quienes sobrevivieron al contacto directo con la Fractura. Son perseguidos y temidos.</p></div>
+      </div>
+      <div class="raceCard" data-race="Varkyn">
+        <div class="raceArt" style="--a:#302a28"><div class="raceFigure" style="--skin:#8f725e;--cloth:#4d4541;--cloak:#201d1c;--glow:#c69b69"><div class="rfHead"></div><div class="rfCloak"></div><div class="rfBody"></div></div></div>
+        <div class="raceInfo"><h3>Varkyn</h3><div class="tag">LOS EXILIADOS · VARKEN</div><p>Supervivientes de una tierra devastada. No confían en los reinos que escribieron la historia.</p></div>
+      </div>
+      <div class="raceCard" data-race="Aethari">
+        <div class="raceArt" style="--a:#142d44"><div class="raceFigure" style="--skin:#d4e3e8;--cloth:#476b87;--cloak:#152d42;--glow:#6de5ff"><div class="rfHead"></div><div class="rfCloak"></div><div class="rfBody"></div><div class="rfMark"></div></div></div>
+        <div class="raceInfo"><h3>Aethari</h3><div class="tag">LOS ANTIGUOS</div><p>Una civilización casi desaparecida. Sus ruinas existen donde no deberían existir.</p></div>
+      </div>
+    </div>
+    <div class="raceDetails"><div id="loreTitle">Selecciona una raza</div><div id="loreText">Cada origen abre una perspectiva diferente sobre la Fractura.</div></div>
+    <button id="raceContinue">CONTINUAR CON ESTA RAZA</button>
+  </div>
+</div>
+
+
+<div id="classSelect">
+ <div class="classPanel">
+  <div class="raceTop"><div><h2>DISCIPLINA DE COMBATE</h2><p>Tu clase es un comienzo. El mundo podrá cambiarla.</p></div></div>
+  <div class="classGrid">
+   <div class="classCard" data-class="Arcane Knight"><div class="classArt" style="--a:#263854"><div class="classFigure" style="--c:#647a96;--c2:#263348;--g:#648aff"><div class="cfHead"></div><div class="cfCloak"></div><div class="cfBody"></div><div class="cfWeapon"></div></div></div><div class="classInfo"><h3>Caballero Arcano</h3><div class="tag">ESPADA · MAGIA</div><p>Combina acero y energía de la Grieta.</p></div></div>
+   <div class="classCard" data-class="Shadow Hunter"><div class="classArt" style="--a:#173b3c"><div class="classFigure" style="--c:#405a68;--c2:#162a31;--g:#49d9ff"><div class="cfHead"></div><div class="cfCloak"></div><div class="cfBody"></div><div class="cfWeapon"></div></div></div><div class="classInfo"><h3>Cazador de Sombras</h3><div class="tag">ARCO · SIGILO</div><p>Movilidad, precisión, trampas y ataques desde la distancia.</p></div></div>
+   <div class="classCard" data-class="Veil Disciple"><div class="classArt" style="--a:#30234a"><div class="classFigure" style="--c:#7359a0;--c2:#251b3b;--g:#a76cff"><div class="cfHead"></div><div class="cfCloak"></div><div class="cfBody"></div><div class="cfWeapon"></div></div></div><div class="classInfo"><h3>Discípulo del Velo</h3><div class="tag">MAGIA · INVOCACIÓN</div><p>Canaliza fuerzas prohibidas y paga un precio por ellas.</p></div></div>
+   <div class="classCard" data-class="Grave Warden"><div class="classArt" style="--a:#43202a"><div class="classFigure" style="--c:#8a3348;--c2:#32131d;--g:#ff3458"><div class="cfHead"></div><div class="cfCloak"></div><div class="cfBody"></div><div class="cfWeapon"></div></div></div><div class="classInfo"><h3>Guardián de Ceniza</h3><div class="tag">DEFENSA · MALDICIONES</div><p>Absorbe daño y convierte maldiciones en fuerza.</p></div></div>
+  </div>
+  <div class="classDetails" id="classDetails">Selecciona una disciplina para ver cómo encaja con tu origen.</div>
+  <button id="classContinue">ENTRAR EN AETHER</button>
+ </div>
+</div>
+
+</body>
+</html>
