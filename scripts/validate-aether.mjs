@@ -31,4 +31,16 @@ for (const feature of [
   "RESPLANDOR VITAL",
 ]) assert.ok(html.includes(feature), `Missing 3D feature: ${feature}`);
 
-console.log(`PASS: ${scripts.length} script blocks parsed; new 3D engine, six lineages, combat, lighting and instanced world verified.`);
+for (const file of [
+  "aether-character-bridge.js",
+  "aether-glb-character-system.js",
+  "aether-production-world.js",
+  "assets/aether/characters/ashfen-ranger.glb",
+  "assets/aether/characters/vale-shieldmaiden.glb",
+  "assets/aether/characters/hollow-warden.glb",
+  "assets/aether/environments/last-gate.glb",
+  "assets/aether/creatures/gloom-stalker.glb",
+  "assets/aether/creatures/ashfen-dragon.glb",
+]) assert.ok(fs.existsSync(file), `Missing production asset: ${file}`);
+
+console.log(`PASS: ${scripts.length} script blocks parsed; six lineages, combat, lighting, authored GLB characters, environment and creatures verified.`);
