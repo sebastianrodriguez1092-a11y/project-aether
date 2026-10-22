@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'aether-character-upgrade.js'
+      - 'aether-character-bridge.js'
   workflow_dispatch:
 permissions:
   contents: write
@@ -13,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inject character upgrade script
+      - name: Inject character bridge
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('PROJECT_AETHER_MOBILE_V004_RACES_CLASSES.html')
           s=p.read_text(encoding='utf-8')
-          tag='<script src="./aether-character-upgrade.js"></script>'
+          tag='<script type="module" src="./aether-character-bridge.js"></script>'
           if tag not in s:
               s=s.replace('</body>', tag+'\n</body>')
               p.write_text(s,encoding='utf-8')
@@ -29,5 +30,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add PROJECT_AETHER_MOBILE_V004_RACES_CLASSES.html
-          git diff --cached --quiet || git commit -m 'Enable detailed Aether character showcase [skip ci]'
+          git diff --cached --quiet || git commit -m 'Fix detailed character showcase loading order [skip ci]'
           git push
