@@ -110,7 +110,11 @@ background:radial-gradient(circle at 50% 20%,#1c2942 0,#070b13 55%,#020306 100%)
 <div id="staminaWrap"><div id="staminaBg"><div id="stamina"></div></div></div>
 <div id="combo">COMBO x1</div>
 <div id="message"></div>
-
+  <div id="aetherProgress" style="position:absolute;top:78px;left:22px;width:min(300px,42vw);font:11px system-ui;color:#e5eaf4;text-shadow:0 2px 5px #000">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span id="aetherLevel">NIVEL 1 · CAMINANTE DEL ALBA</span><span id="aetherXpText">0 / 100 XP</span></div>
+    <div style="height:6px;border:1px solid #6d7890;background:#111722;border-radius:6px;overflow:hidden"><div id="aetherXp" style="height:100%;width:0;background:linear-gradient(90deg,#39b6e8,#d8e9ff)"></div></div>
+    <div style="margin-top:7px;color:#d8c18b">Q · GOLPE ARCANO &nbsp;&nbsp; E · RESPLANDOR VITAL</div>
+  </div>
   <div id="title">PROJECT AETHER · VERTICAL SLICE 001</div>
   <div id="objective">OBJETIVO · Llega a la Puerta de Obsidiana</div>
   <div id="cross"></div>
@@ -544,6 +548,9 @@ function setHealth(v){health=Math.max(0,Math.min(100,v));healthEl.style.width=he
 addEventListener("keydown",e=>{if(e.code==="KeyR"&&health<=0)location.reload()});
 
 let comboCount=0, comboTimer=0, stamina=100, lastAttack=0;
+let aetherXP=0,aetherLevel=1,arcaneCooldown=0,healCooldown=0;
+const xpBar=document.getElementById("aetherXp"),xpText=document.getElementById("aetherXpText"),levelText=document.getElementById("aetherLevel");
+function grantAetherXP(amount){aetherXP+=amount;while(aetherXP>=100){aetherXP-=100;aetherLevel++;health=Math.min(100,health+20);setHealth(health);flashMessage("¡NIVEL "+aetherLevel+"! +20 VITALIDAD");}if(xpBar)xpBar.style.width=aetherXP+"%";if(xpText)xpText.textContent=aetherXP+" / 100 XP";if(levelText)levelText.textContent="NIVEL "+aetherLevel+" · CAMINANTE DEL ALBA";}
 const enemyHpEl=document.getElementById("enemyHp"), enemyHud=document.getElementById("enemyHud");
 const comboEl=document.getElementById("combo"), staminaEl=document.getElementById("stamina"), messageEl=document.getElementById("message");
 
@@ -567,7 +574,9 @@ function attack(){
     flashMessage("IMPACTO  −"+damageValue);
     if(enemy.hp<=0){
       enemy.dead=true; enemyHud.style.display="none";
-      flashMessage("GUARDIÁN VENCIDO");
+      grantAetherXP(100);
+      const objective=document.getElementById("objective");if(objective)objective.textContent="MISIÓN COMPLETADA · El Guardián ha caído. Alcanza el Umbral.";
+      flashMessage("GUARDIÁN VENCIDO · +100 XP");
       gateGlow.emissiveIntensity=5;
       for(let i=0;i<12;i++){
         const s=new THREE.Mesh(new THREE.SphereGeometry(.08+Math.random()*.08,6,6),crystal);
@@ -578,12 +587,30 @@ function attack(){
   }
 }
 addEventListener("mousedown",attack);
+// AETHER_RPG_ABILITIES_V1: class-neutral starter abilities with cooldowns and visible spell feedback.
+addEventListener("keydown",e=>{
+  if(e.repeat||!window.__AETHER_CHARACTER)return;
+  if(e.code==="KeyQ"&&arcaneCooldown<=0&&(!controls.isLocked&&!mobileActive()?false:true)&&!enemy.dead){
+    arcaneCooldown=4.5;weaponSwing=.32;
+    const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+    const to=enemy.group.position.clone().sub(camera.position),dist=to.length();to.normalize();
+    const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),new THREE.MeshBasicMaterial({color:0x5ee7ff}));
+    orb.position.copy(camera.position).addScaledVector(dir,.8);orb.userData.v=dir.clone().multiplyScalar(24);orb.userData.life=.65;orb.scale.setScalar(1);scene.add(orb);effects.push(orb);
+    if(dist<14&&dir.dot(to)>.72){const hit=34;enemy.hp=Math.max(0,enemy.hp-hit);enemy.hitFlash=.2;enemyHpEl.style.width=enemy.hp+"%";flashMessage("GOLPE ARCANO −"+hit+" · Q");if(enemy.hp<=0&&!enemy.dead){enemy.dead=true;enemyHud.style.display="none";grantAetherXP(100);const objective=document.getElementById("objective");if(objective)objective.textContent="MISIÓN COMPLETADA · El Guardián ha caído. Alcanza el Umbral.";flashMessage("GUARDIÁN VENCIDO · +100 XP");gateGlow.emissiveIntensity=5;}}
+  }
+  if(e.code==="KeyE"&&healCooldown<=0&&health>0&&window.__AETHER_CHARACTER){
+    healCooldown=12;setHealth(Math.min(100,health+28));stamina=Math.min(100,stamina+35);flashMessage("RESPLANDOR VITAL · +28 VITALIDAD");
+    const glow=new THREE.PointLight(0x69e8bd,7,5,2);glow.position.copy(camera.position);scene.add(glow);setTimeout(()=>scene.remove(glow),450);
+  }
+});
 
 
 const effects=[];
 function updateEffects(dt){
   for(let i=effects.length-1;i>=0;i--){
-    const s=effects[i];s.position.addScaledVector(s.userData.v,dt);s.userData.v.y-=7*dt;
+    const s=effects[i];
+    if(s.userData.life!==undefined){s.position.addScaledVector(s.userData.v,dt);s.userData.life-=dt;s.scale.multiplyScalar(1.012);if(s.userData.life<=0){scene.remove(s);effects.splice(i,1)}continue;}
+    s.position.addScaledVector(s.userData.v,dt);s.userData.v.y-=7*dt;
     s.scale.multiplyScalar(.985);
     if(s.position.y<0){scene.remove(s);effects.splice(i,1)}
   }
@@ -609,7 +636,7 @@ function update(dt){
   if(camera.position.y<=2.1){camera.position.y=2.1;vy=0;onGround=true}
   camera.position.x=Math.max(-14,Math.min(14,camera.position.x));
   camera.position.z=Math.max(-52,Math.min(22,camera.position.z));
-  attackCooldown=Math.max(0,attackCooldown-dt);weaponSwing=Math.max(0,weaponSwing-dt);
+  attackCooldown=Math.max(0,attackCooldown-dt);weaponSwing=Math.max(0,weaponSwing-dt);arcaneCooldown=Math.max(0,arcaneCooldown-dt);healCooldown=Math.max(0,healCooldown-dt);
   const swing=weaponSwing>0?Math.sin((.26-weaponSwing)/.26*Math.PI):0;weaponRig.rotation.z=-.28-swing*1.15;weaponRig.rotation.x=.12+swing*.42;
   stamina=Math.min(100,stamina+dt*24); staminaEl.style.width=stamina+"%";
   comboTimer-=dt; if(comboTimer<=0){comboCount=0;comboEl.style.opacity=0}
@@ -621,7 +648,7 @@ function update(dt){
   if(enemy.hitFlash>0){enemy.hitFlash-=dt;enemyMat.emissive.setHex(0x7d1730);enemyMat.emissiveIntensity=3}else{enemyMat.emissive.setHex(0x000000);enemyMat.emissiveIntensity=0}
   const nearGate=camera.position.z<-48;
   if(nearGate&&!enemy.dead){prompt.style.display="block";prompt.textContent="La Puerta rechaza tu presencia. Derrota al Guardián."}
-  else if(nearGate&&enemy.dead){prompt.style.display="block";prompt.textContent="HAS ALCANZADO LA PUERTA · Vertical Slice 001 completado."}
+  else if(nearGate&&enemy.dead){prompt.style.display="block";prompt.textContent="HAS ALCANZADO LA PUERTA · PRÓLOGO COMPLETADO.";const objective=document.getElementById("objective");if(objective)objective.textContent="PRÓLOGO COMPLETADO · El Umbral te espera.";}
   else if(controls.isLocked&&prompt.textContent!==""){prompt.style.display="none"}
 }
 
