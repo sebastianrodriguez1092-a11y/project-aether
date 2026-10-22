@@ -101,6 +101,35 @@ background:radial-gradient(circle at 50% 20%,#1c2942 0,#070b13 55%,#020306 100%)
 #classContinue{display:none;margin-top:12px;width:100%;padding:13px;border:0;border-radius:9px;background:#dce7ff;color:#07101e;font-weight:900}
 @media(max-width:800px){.classGrid{grid-template-columns:repeat(2,1fr)}.classPanel{padding:15px}.classArt{height:125px}.classCard{min-height:270px}}
 
+
+/* AETHER CINEMATIC CHARACTER SELECT V2 */
+#raceSelect{background:linear-gradient(180deg,#091426b8 0%,#07101b38 34%,#03070df2 78%,#02050afc 100%),radial-gradient(ellipse at 50% 24%,#88c9ff44,transparent 58%),linear-gradient(125deg,#142a3a,#09111c 55%,#171d2a);backdrop-filter:blur(2px)}
+.racePanel{width:min(1500px,98vw);max-height:96vh;padding:clamp(12px,1.7vw,26px);border:1px solid #c4a96c99;border-radius:5px;background:linear-gradient(145deg,#07101beF,#101a26e8 52%,#050a12f5);box-shadow:0 30px 100px #000d,inset 0 0 0 1px #ffffff0b;position:relative;overflow:hidden}
+.racePanel:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent,#c3dfff07 50%,transparent),radial-gradient(ellipse at 50% 0%,#9ed5ff13,transparent 60%)}
+.raceTop{position:relative;z-index:1;border-bottom:1px solid #c9ae6b55;padding-bottom:12px}
+.raceTop h2{font-family:Georgia,serif;font-size:clamp(22px,2.3vw,36px);letter-spacing:5px;color:#f4e5bd;text-shadow:0 2px 15px #8bbcff66}
+.raceTop p{font-size:12px;letter-spacing:1.3px;color:#b9cbe0}
+.raceGrid{position:relative;z-index:1;grid-template-columns:repeat(6,minmax(0,1fr));gap:clamp(5px,.8vw,12px)}
+.raceCard{position:relative;min-height:clamp(250px,35vh,390px);border:1px solid #b5c9df30;border-radius:4px;background:linear-gradient(180deg,#182b3b99,#060b13 80%);transition:transform .25s,border-color .25s,filter .25s;box-shadow:inset 0 0 28px #0006}
+.raceCard:hover,.raceCard.selected{transform:translateY(-5px) scale(1.015);border-color:#e4c77b;box-shadow:0 0 0 1px #e4c77b38,0 12px 32px #000b,inset 0 0 24px #b9dcff12;filter:brightness(1.14)}
+.raceArt{height:clamp(145px,23vh,255px);overflow:hidden;background:radial-gradient(ellipse at 50% 30%,var(--glow,#75b8ff55),transparent 60%),linear-gradient(160deg,var(--a),#0b1018 80%);border-bottom:1px solid #d4b97445}
+.raceArt:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#cde9ff14,transparent 36%,#02050be8 100%),radial-gradient(ellipse at 20% 100%,#a8d6ff20,transparent 45%);pointer-events:none}
+.raceFigure{width:100%;height:100%;bottom:-1px;filter:drop-shadow(0 9px 9px #000b);transform:translateX(-50%) scale(1.04);transform-origin:bottom center}
+.raceFigure .rfHead{left:calc(50% - 17px);top:8%;width:34px;height:39px;border-radius:45% 45% 42% 42%;background:linear-gradient(105deg,#644538 0%,var(--skin) 38%,#e0b99b 65%,#6b493c 100%);box-shadow:inset -5px -2px 0 #241d2670,0 0 0 2px #171a20;z-index:3}
+.raceFigure .rfHead:before{content:"";position:absolute;left:2px;top:8px;width:30px;height:9px;border-top:3px solid #1d1a1b;border-radius:50%;box-shadow:0 7px 0 -2px #e9d3b1}
+.raceFigure .rfHead:after{content:"";position:absolute;left:14px;top:20px;width:7px;height:4px;border-radius:50%;background:#9cf4ff;box-shadow:0 0 10px #64ddff,0 0 17px #64ddff}
+.raceFigure .rfBody{left:calc(50% - 29px);bottom:0;width:58px;height:68%;border-radius:20px 20px 5px 5px;background:linear-gradient(100deg,#101821 0%,var(--cloth) 22%,#d8c89a 48%,var(--cloth) 72%,#101821 100%);clip-path:polygon(27% 0,73% 0,100% 24%,83% 60%,78% 100%,22% 100%,17% 60%,0 24%);box-shadow:inset 0 0 0 2px #dfc47a88,0 0 24px var(--glow,#6ccfff33);z-index:2}
+.raceFigure .rfCloak{left:calc(50% - 43px);bottom:0;width:86px;height:72%;clip-path:polygon(28% 0,72% 0,100% 100%,0 100%);background:linear-gradient(90deg,#101722,var(--cloak),#111b28);opacity:.9;filter:drop-shadow(0 0 3px #d5c17b33)}
+.raceFigure .rfMark{left:calc(50% - 4px);top:43%;width:8px;height:8px;border-radius:50%;background:#c8f8ff;box-shadow:0 0 9px #6be5ff,0 0 20px #69aaff;z-index:4}
+.raceInfo{position:relative;z-index:2;padding:10px 9px 12px;background:linear-gradient(180deg,#07101acc,#050910)}
+.raceInfo h3{font-family:Georgia,serif;font-size:clamp(12px,1vw,16px);letter-spacing:1.5px;color:#f1dfb3;text-transform:uppercase}
+.raceInfo .tag{font-size:9px;letter-spacing:1.2px;color:#9bc7ee}
+.raceInfo p{font-size:clamp(10px,.75vw,12px);line-height:1.45;color:#b7c3d1;margin-top:7px}
+.raceDetails{position:relative;z-index:2;background:linear-gradient(90deg,#101c2add,#08111ddd);border:1px solid #bfa76b55;color:#d1dced}
+#raceContinue{position:relative;z-index:2;background:linear-gradient(180deg,#e9d39a,#98713a);color:#14100a;border:1px solid #ffe9ad;border-radius:3px;letter-spacing:1.8px;box-shadow:0 4px 18px #caa45b35}
+@media(max-width:1000px){.raceGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.raceCard{min-height:250px}.raceArt{height:150px}}
+@media(max-width:560px){.raceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.raceCard{min-height:240px}.raceArt{height:135px}.raceTop{align-items:start;flex-direction:column}}
+
 </style>
 </head>
 <body style="touch-action:none;user-select:none;-webkit-user-select:none">
