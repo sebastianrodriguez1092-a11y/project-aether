@@ -544,9 +544,26 @@ classContinue.addEventListener("click",()=>{
  </div>
 </div>
 
-<!-- Independent launch fallback: runs even if the Three.js module fails to load. -->
+<!-- Independent launch fallback and visible diagnostics for module/runtime failures. -->
 <script>
 (function () {
+  function showAetherError(message) {
+    var panel = document.getElementById("aetherErrorPanel");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "aetherErrorPanel";
+      panel.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:10000;padding:14px 16px;background:#32151b;color:#fff;border:1px solid #ff7185;border-radius:10px;font:13px/1.45 system-ui;white-space:pre-wrap;max-height:35vh;overflow:auto";
+      document.body.appendChild(panel);
+    }
+    panel.textContent = "PROJECT AETHER detectó un error de ejecución. Copia este mensaje para el diagnóstico:\\n" + String(message || "Error desconocido");
+  }
+  window.addEventListener("error", function (event) {
+    showAetherError(event.message || (event.target && event.target.src) || "No se pudo cargar un recurso del juego.");
+  });
+  window.addEventListener("unhandledrejection", function (event) {
+    var reason = event.reason;
+    showAetherError(reason && (reason.stack || reason.message) || reason || "Fallo al cargar un módulo.");
+  });
   function wireAetherLaunch() {
     var startBtn = document.getElementById("startBtn");
     var startScreen = document.getElementById("start");
