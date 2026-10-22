@@ -16,7 +16,8 @@ try {
     headless: true,
     args: ["--no-sandbox", "--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
   });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 800, height: 600 }, deviceScaleFactor: 1 });
+  page.setDefaultTimeout(8000);
   const pageErrors = [];
   const consoleErrors = [];
   const failedRequests = [];
