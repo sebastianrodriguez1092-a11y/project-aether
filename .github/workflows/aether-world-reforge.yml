@@ -16,5 +16,7 @@ jobs:
           node-version: '20'
       - name: Validate world reforge
         run: node --check aether-world-reforge.js
+      - name: Validate world art pass
+        run: node --check aether-world-art-pass.js
       - name: Validate bridge
         run: node --check aether-character-bridge.js
