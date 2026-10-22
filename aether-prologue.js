@@ -1,4 +1,4 @@
-// AETHER_PROLOGUE_3D_V2
+// AETHER_PROLOGUE_3D_V3
 (()=>{
 const boot=()=>{
  if(window.__AETHER_PROLOGUE_INSTALLED)return;
@@ -47,4 +47,6 @@ window.__AETHER_PROLOGUE_READY=true;
 };
 window.AetherStartPrologue=()=>{if(window.__AETHER_PROLOGUE_READY||window.__AETHER_PROLOGUE_INSTALLED)return;boot()};
 window.addEventListener('aether:character-ready',()=>window.AetherStartPrologue(),{once:true});
+const bindStart=()=>{const b=document.getElementById('continue');if(b)b.addEventListener('click',()=>setTimeout(()=>window.AetherStartPrologue&&window.AetherStartPrologue(),100),{once:true,capture:true})};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindStart,{once:true});else bindStart();
 })();
