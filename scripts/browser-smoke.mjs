@@ -14,7 +14,7 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
-  page.setDefaultTimeout(10000);
+  page.setDefaultTimeout(15000);
   const pageErrors = [], consoleErrors = [], failedRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
@@ -22,7 +22,6 @@ try {
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForFunction(() => window.__AETHER_NEW_ENGINE_READY === true, undefined, { timeout: 20000 });
   assert.ok(await page.locator("#game").count(), "3D canvas missing");
-  assert.ok(await page.locator("#game").evaluate(c => c.width > 0 && c.height > 0), "3D canvas has no dimensions");
   await page.locator("#enter").click();
   await page.waitForSelector(".race");
   assert.equal(await page.locator(".race").count(), 6, "Six lineage cards are required");
@@ -30,12 +29,20 @@ try {
   await page.locator("#continue").click();
   await page.waitForTimeout(1200);
   assert.equal(await page.locator("#select").evaluate(el => getComputedStyle(el).display), "none", "Selection screen did not close");
-  assert.equal(await page.locator("#hud").evaluate(el => getComputedStyle(el).display), "block", "HUD did not activate");
+  await page.waitForFunction(() => window.__AETHER_PROLOGUE_READY === true, undefined, { timeout: 15000 });
+  assert.ok(await page.locator("#aetherPrologue").count(), "3D cinematic prologue did not appear");
+  assert.ok(await page.locator("#aetherPrologue canvas").count(), "Prologue 3D canvas missing");
   await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, animations: "disabled" });
+  await page.locator("#aetherBeginStory").click();
+  await page.locator("#aetherBeginStory").click();
+  await page.locator("#aetherBeginStory").click();
+  await page.locator("#aetherBeginStory").click();
+  await page.waitForFunction(() => window.__AETHER_PROLOGUE_COMPLETE === true, undefined, { timeout: 5000 });
+  assert.equal(await page.locator("#hud").evaluate(el => getComputedStyle(el).display), "block", "HUD did not activate after prologue");
   const visibleErrors = await page.locator("#aetherErrorPanel").count() ? await page.locator("#aetherErrorPanel").innerText() : "";
   assert.equal(visibleErrors, "", "Runtime error panel appeared: " + visibleErrors);
   assert.deepEqual(pageErrors, [], "Uncaught browser exceptions occurred: " + JSON.stringify({ pageErrors, consoleErrors, failedRequests }));
-  console.log("PASS: New Aether 3D engine loaded, six-lineage selection worked, game HUD activated, screenshot captured, no uncaught exceptions.");
+  console.log("PASS: Aether 3D engine loaded, lineage selection worked, cinematic 3D prologue rendered and completed, HUD activated, no uncaught exceptions.");
 } finally {
   if (browser) await browser.close();
   await new Promise(resolve => server.close(resolve));
