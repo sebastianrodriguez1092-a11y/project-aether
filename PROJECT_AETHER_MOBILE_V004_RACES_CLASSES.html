@@ -136,10 +136,10 @@ import {UnrealBloomPass} from "https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 
 const canvas=document.getElementById("game");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=!(innerWidth<=800 || (navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4));
+renderer.shadowMap.type=THREE.PCFShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.25;
@@ -159,7 +159,7 @@ function makeSkyTexture(){
   g.fillStyle=neb;g.fillRect(400,0,550,450);
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;return tex;
 }
-const skyDome=new THREE.Mesh(new THREE.SphereGeometry(175,40,24),new THREE.MeshBasicMaterial({map:makeSkyTexture(),side:THREE.BackSide,depthWrite:false,fog:false}));
+const skyDome=new THREE.Mesh(new THREE.SphereGeometry(175,24,16),new THREE.MeshBasicMaterial({map:makeSkyTexture(),side:THREE.BackSide,depthWrite:false,fog:false}));
 skyDome.renderOrder=-10;scene.add(skyDome);
 const moonDisc=new THREE.Mesh(new THREE.SphereGeometry(3.1,24,16),new THREE.MeshBasicMaterial({color:0xcbd9ef}));
 moonDisc.position.set(34,39,-116);scene.add(moonDisc);
@@ -169,7 +169,7 @@ moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
 camera.position.set(0,2.1,18);
 // AETHER_3D_WORLD_MAP_V1: full-scene orthographic survey mode; press M during play.
-const mapCamera=new THREE.OrthographicCamera(-112,112,112,-112,.1,420);
+const mapCamera=new THREE.OrthographicCamera(-145,145,145,-145,.1,420);
 mapCamera.up.set(0,0,-1);mapCamera.position.set(0,170,-15);mapCamera.lookAt(0,0,-15);
 let mapMode=false;
 const mapNotice=document.createElement("div");
@@ -253,7 +253,7 @@ const ground=new THREE.Mesh(terrainGeo,matGround);
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 // AETHER_PHOTO_TEXTURES_V1: load real tiling terrain imagery from the official Three.js public texture set.
 // The generated canvas map above stays active if the external asset cannot be reached.
-const textureLoader=new THREE.TextureLoader();
+const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin("anonymous");
 textureLoader.load("https://threejs.org/examples/textures/terrain/grasslight-big.jpg",tex=>{
   tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(22,22);
   tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
@@ -377,19 +377,7 @@ const gateGlow=new THREE.MeshStandardMaterial({color:0x172b4d,emissive:0x164cff,
 box(0,6,-54,9,12,.8,gateGlow);
 const gateLight=new THREE.PointLight(0x3478ff,28,22,2);gateLight.position.set(0,6,-50);scene.add(gateLight);
 
-// Trees
-const trunkMat=new THREE.MeshStandardMaterial({color:0x2b211b,roughness:1});
-const leafMat=new THREE.MeshStandardMaterial({color:0x18362c,roughness:.95});
-for(let i=0;i<22;i++){
-  const a=Math.random()*Math.PI*2,r=13+Math.random()*38,x=Math.cos(a)*r,z=Math.sin(a)*r;
-  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.28,.55,5+Math.random()*4,7),trunkMat);
-  trunk.position.set(x,(trunk.geometry.parameters.height/2),z);trunk.castShadow=true;scene.add(trunk);
-  for(let j=0;j<3;j++){
-    const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(1.5+Math.random()*1.7,1),leafMat);
-    crown.position.set(x+(Math.random()-.5)*1.8,4+j*1.1,z+(Math.random()-.5)*1.8);
-    crown.castShadow=true;scene.add(crown);
-  }
-}
+// The legacy per-object tree loop was removed; the instanced forest below renders the canopy in fewer draw calls.
 
 // AETHER_WORLD_DETAIL_PASS_V1: distant mountain silhouettes add scale to the world.
 const mountainMat=new THREE.MeshStandardMaterial({color:0x536a70,roughness:1,flatShading:true});
