@@ -146,7 +146,25 @@ renderer.toneMappingExposure=1.15;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x070b13);
-scene.fog=new THREE.FogExp2(0x0b1220,0.012);
+scene.fog=new THREE.FogExp2(0x0b1220,0.009);
+// AETHER_SKY_ATMOSPHERE_V1: procedural sky dome with a readable horizon and stars.
+function makeSkyTexture(){
+  const c=document.createElement("canvas");c.width=1024;c.height=512;const g=c.getContext("2d");
+  const grad=g.createLinearGradient(0,0,0,512);
+  grad.addColorStop(0,"#030711");grad.addColorStop(.38,"#101d32");grad.addColorStop(.72,"#344356");grad.addColorStop(1,"#6a6570");
+  g.fillStyle=grad;g.fillRect(0,0,1024,512);
+  let seed=4451;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+  for(let i=0;i<420;i++){const x=rnd()*1024,y=rnd()*300,r=.35+rnd()*1.15;g.fillStyle="rgba(194,216,255,"+(.18+rnd()*.65)+")";g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+  const neb=g.createRadialGradient(690,210,5,690,210,240);neb.addColorStop(0,"rgba(88,110,166,.19)");neb.addColorStop(1,"rgba(15,24,45,0)");
+  g.fillStyle=neb;g.fillRect(400,0,550,450);
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;return tex;
+}
+const skyDome=new THREE.Mesh(new THREE.SphereGeometry(175,40,24),new THREE.MeshBasicMaterial({map:makeSkyTexture(),side:THREE.BackSide,depthWrite:false,fog:false}));
+skyDome.renderOrder=-10;scene.add(skyDome);
+const moonDisc=new THREE.Mesh(new THREE.SphereGeometry(3.1,24,16),new THREE.MeshBasicMaterial({color:0xcbd9ef}));
+moonDisc.position.set(34,39,-116);scene.add(moonDisc);
+const moonHalo=new THREE.Mesh(new THREE.SphereGeometry(4.8,24,16),new THREE.MeshBasicMaterial({color:0x7f9dc9,transparent:true,opacity:.11,depthWrite:false}));
+moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);
 
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
 camera.position.set(0,2.1,18);
@@ -195,15 +213,34 @@ function makeGroundTexture(){
   t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
 }
 const matGround=new THREE.MeshStandardMaterial({color:0xffffff,map:makeGroundTexture(),roughness:1,metalness:0});
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(220,220),matGround);
+const terrainGeo=new THREE.PlaneGeometry(220,220,100,100);
+// Gentle side ridges; the central playable corridor remains flat for reliable movement.
+const terrainPos=terrainGeo.attributes.position;
+for(let i=0;i<terrainPos.count;i++){
+  const x=terrainPos.getX(i),z=terrainPos.getY(i),side=Math.max(0,Math.abs(x)-7);
+  const ridge=(Math.sin(x*.13+z*.06)*.20+Math.cos(z*.17-x*.08)*.14)*Math.min(1,side/5);
+  terrainPos.setZ(i,ridge);
+}
+terrainGeo.computeVertexNormals();
+const ground=new THREE.Mesh(terrainGeo,matGround);
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 
 function box(x,y,z,sx,sy,sz,mat=matGround){
   const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat);
   m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
 }
-const stone=new THREE.MeshStandardMaterial({color:0x39404a,roughness:.88,metalness:.08});
-const darkStone=new THREE.MeshStandardMaterial({color:0x171b22,roughness:.72,metalness:.25});
+// Shared procedural stone grain adds surface detail while reusing one texture.
+function makeStoneTexture(){
+  const c=document.createElement("canvas");c.width=256;c.height=256;const g=c.getContext("2d");
+  g.fillStyle="#b5b9bd";g.fillRect(0,0,256,256);
+  let seed=2219;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+  for(let i=0;i<2400;i++){const v=90+rnd()*150;g.fillStyle="rgba("+v+","+v+","+v+","+(.06+rnd()*.24)+")";g.fillRect(rnd()*256,rnd()*256,1+rnd()*4,1+rnd()*3);}
+  for(let y=0;y<256;y+=64){g.strokeStyle="rgba(20,25,32,.20)";g.lineWidth=2;g.beginPath();g.moveTo(0,y+rnd()*10);g.lineTo(256,y+rnd()*10);g.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+const stoneTexture=makeStoneTexture();
+const stone=new THREE.MeshStandardMaterial({color:0xffffff,map:stoneTexture,roughness:.94,metalness:.025});
+const darkStone=new THREE.MeshStandardMaterial({color:0x777e88,map:stoneTexture,roughness:.86,metalness:.12});
 const crystal=new THREE.MeshStandardMaterial({color:0x5a8cff,emissive:0x244cff,emissiveIntensity:3.5,roughness:.2,metalness:.15});
 
 for(let i=0;i<24;i++){
