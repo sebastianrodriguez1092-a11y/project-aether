@@ -122,7 +122,7 @@ background:radial-gradient(circle at 50% 20%,#1c2942 0,#070b13 55%,#020306 100%)
   <div class="card">
     <h1>AETHER</h1>
     <div class="sub">Vertical Slice 002 · Núcleo jugable móvil del RPG de acción en primera persona. Explora las ruinas, sobrevive al guardián y alcanza la Puerta de Obsidiana.</div>
-    <button id="startBtn">ENTRAR AL MUNDO</button>
+    <button id="startBtn" onclick="document.getElementById('start').style.display='none';document.getElementById('raceSelect').style.display='flex';">ENTRAR AL MUNDO</button>
     <div class="small">WASD · mover &nbsp; SHIFT · correr &nbsp; ESPACIO · saltar &nbsp; CLICK · atacar &nbsp; ESC · liberar cursor</div>
   </div>
 </div>
@@ -474,6 +474,8 @@ classCards.forEach(c=>c.addEventListener("click",()=>{
 classContinue.addEventListener("click",()=>{
  classSelect.style.display="none";
  if(typeof flashMessage==="function")flashMessage("ORIGEN: "+(selectedRace||"DESCONOCIDO")+" · CLASE: "+selectedClass);
+ // Desktop: lock the pointer after character creation so mouse-look and gameplay activate.
+ if(!mobileActive()) controls.lock();
 });
 
 </script>
