@@ -268,7 +268,9 @@ const terrainGeo=new THREE.PlaneGeometry(220,220,100,100);
 const terrainPos=terrainGeo.attributes.position;
 for(let i=0;i<terrainPos.count;i++){
   const x=terrainPos.getX(i),z=terrainPos.getY(i),side=Math.max(0,Math.abs(x)-7);
-  const ridge=(Math.sin(x*.13+z*.06)*.20+Math.cos(z*.17-x*.08)*.14)*Math.min(1,side/5);
+  const broad=(Math.sin(x*.075+z*.035)*.34+Math.cos(z*.09-x*.055)*.24);
+  const detail=(Math.sin(x*.21+z*.16)*.055+Math.cos(z*.24-x*.19)*.04);
+  const ridge=(broad+detail)*Math.min(1,side/4);
   terrainPos.setZ(i,ridge);
 }
 terrainGeo.computeVertexNormals();
@@ -354,7 +356,8 @@ const aetherLeaves=[
  new THREE.MeshStandardMaterial({color:0x2c7256,roughness:1})
 ];
 const aetherTrunkGeo=new THREE.CylinderGeometry(.22,.42,3.8,7);
-const aetherCrownGeo=new THREE.IcosahedronGeometry(2.0,1);
+// Smooth, overlapping foliage silhouettes replace the faceted polygon crowns.
+const aetherCrownGeo=new THREE.SphereGeometry(1.65,12,9);
 const aetherTreeCount=72;
 const aetherTrunks=new THREE.InstancedMesh(aetherTrunkGeo,aetherBark,aetherTreeCount);
 const aetherCrowns=aetherLeaves.map(m=>new THREE.InstancedMesh(aetherCrownGeo,m,aetherTreeCount));
@@ -374,8 +377,8 @@ for(let i=0;i<aetherTreeCount;i++){
  for(let j=0;j<aetherCrowns.length;j++){
    aetherDummy.position.set(x,height+(.5+j*.48),z);
    aetherDummy.rotation.set(aetherRand()*.2,aetherRand()*Math.PI,aetherRand()*.2);
-   const crownScale=scale*(1.08-j*.16);
-   aetherDummy.scale.set(crownScale,crownScale*(.9+aetherRand()*.3),crownScale);
+   const crownScale=scale*(1.16-j*.12);
+   aetherDummy.scale.set(crownScale*(.94+aetherRand()*.16),crownScale*(1.05+aetherRand()*.22),crownScale*(.92+aetherRand()*.18));
    aetherDummy.updateMatrix();aetherCrowns[j].setMatrixAt(i,aetherDummy.matrix);
  }
 }
@@ -384,7 +387,8 @@ for(const canopy of aetherCrowns){canopy.castShadow=true;canopy.receiveShadow=tr
 
 // AETHER_FACTION_BANNERS_V1: strong faction colors and a readable route through the level.
 const aetherPathMat=new THREE.MeshStandardMaterial({color:0xc0a16c,roughness:1});
-const aetherPathGeo=new THREE.BoxGeometry(2.1,.055,1.55);
+// Irregular flattened stones make the route feel worn instead of tiled with cubes.
+const aetherPathGeo=new THREE.DodecahedronGeometry(1,1);
 const aetherPath=new THREE.InstancedMesh(aetherPathGeo,aetherPathMat,34);
 const aetherPathDummy=new THREE.Object3D();
 for(let i=0;i<34;i++){
@@ -428,18 +432,18 @@ const gateLight=new THREE.PointLight(0x3478ff,28,22,2);gateLight.position.set(0,
 // The legacy per-object tree loop was removed; the instanced forest below renders the canopy in fewer draw calls.
 
 // AETHER_WORLD_DETAIL_PASS_V1: distant mountain silhouettes add scale to the world.
-const mountainMat=new THREE.MeshStandardMaterial({color:0x536a70,roughness:1,flatShading:true});
-const ridgeMat=new THREE.MeshStandardMaterial({color:0x73817b,roughness:1,flatShading:true});
+const mountainMat=new THREE.MeshStandardMaterial({color:0x536a70,roughness:1,flatShading:false});
+const ridgeMat=new THREE.MeshStandardMaterial({color:0x73817b,roughness:1,flatShading:false});
 for(let i=0;i<22;i++){
   const ang=(-Math.PI*.5)+(i/21)*Math.PI*1.1;
   const radius=92+(i%4)*9,height=18+(i%5)*8,width=13+(i%3)*7;
-  const mountain=new THREE.Mesh(new THREE.ConeGeometry(width,height,5+(i%3),1),i%2?mountainMat:ridgeMat);
+  const mountain=new THREE.Mesh(new THREE.ConeGeometry(width,height,9+(i%3),2),i%2?mountainMat:ridgeMat);
   mountain.position.set(Math.sin(ang)*radius,height*.38,-64-Math.cos(ang)*radius*.58);
   mountain.rotation.y=(i%7)*.31;mountain.rotation.z=((i%3)-1)*.06;
   mountain.receiveShadow=true;scene.add(mountain);mapHideObjects.push(mountain);
 }
 // Broken paving slabs and scattered rubble: one shared geometry/material keeps draw calls modest.
-const slabGeo=new THREE.BoxGeometry(1,0.12,1.7);
+const slabGeo=new THREE.DodecahedronGeometry(1,1);
 const slabMat=new THREE.MeshStandardMaterial({color:0x4a515c,roughness:.96,metalness:.015});
 const slabs=new THREE.InstancedMesh(slabGeo,slabMat,170);
 const dummy=new THREE.Object3D();
@@ -528,8 +532,8 @@ const trimMat=new THREE.MeshStandardMaterial({color:0x6b536e,roughness:.34,metal
 const boneMat=new THREE.MeshStandardMaterial({color:0x8c8792,roughness:.7,metalness:.1});
 const body=new THREE.Mesh(new THREE.CapsuleGeometry(.65,1.18,5,10),enemyMat);body.position.y=1.35;body.castShadow=true;enemy.group.add(body);
 const chest=new THREE.Mesh(new THREE.OctahedronGeometry(.76,1),armorMat);chest.position.set(0,1.7,-.05);chest.scale.set(1.12,1.0,.72);chest.castShadow=true;enemy.group.add(chest);
-const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.58,1),armorMat);head.position.y=2.62;head.castShadow=true;enemy.group.add(head);
-const helmFront=new THREE.Mesh(new THREE.BoxGeometry(.55,.16,.18),trimMat);helmFront.position.set(0,2.83,-.45);enemy.group.add(helmFront);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.53,14,11),armorMat);head.scale.set(1,.96,.88);head.position.y=2.62;head.castShadow=true;enemy.group.add(head);
+const helmFront=new THREE.Mesh(new THREE.SphereGeometry(.32,12,8),trimMat);helmFront.scale.set(1,.28,.32);helmFront.position.set(0,2.83,-.45);enemy.group.add(helmFront);
 for(const side of [-1,1]){
   const horn=new THREE.Mesh(new THREE.ConeGeometry(.16,.82,6),boneMat);horn.position.set(side*.43,3.08,-.02);horn.rotation.z=side*.48;horn.rotation.x=-.15;horn.castShadow=true;enemy.group.add(horn);
   const shoulder=new THREE.Mesh(new THREE.DodecahedronGeometry(.48,1),armorMat);shoulder.position.set(side*.82,2.02,0);shoulder.scale.set(1,.82,1);shoulder.castShadow=true;enemy.group.add(shoulder);
