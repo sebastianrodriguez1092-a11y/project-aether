@@ -289,6 +289,15 @@ for(let i=0;i<24;i++){
   rock.scale.y=.55+Math.random()*.8;rock.castShadow=true;rock.receiveShadow=true;scene.add(rock);
 }
 
+// AETHER_MOUNTAIN_COLOR_PASS_V1: blue-green distant ridgelines create depth without expensive effects.
+const aetherFarRidgeMat=new THREE.MeshStandardMaterial({color:0x9aafa9,roughness:1,flatShading:true});
+for(let i=0;i<16;i++){
+ const ang=-Math.PI*.48+(i/15)*Math.PI*.95;
+ const radius=125+(i%3)*8,height=30+(i%4)*11,width=18+(i%2)*8;
+ const ridge=new THREE.Mesh(new THREE.ConeGeometry(width,height,5,1),aetherFarRidgeMat);
+ ridge.position.set(Math.sin(ang)*radius,height*.43,-70-Math.cos(ang)*radius*.48);
+ ridge.rotation.y=(i%5)*.24;ridge.receiveShadow=true;scene.add(ridge);
+}
 // AETHER_FANTASY_FOREST_V1: original low-poly treeline and leafy canopy, Warcraft-inspired fantasy palette.
 const aetherBark=new THREE.MeshStandardMaterial({color:0x68472e,roughness:1});
 const aetherLeaves=[
@@ -383,8 +392,8 @@ for(let i=0;i<22;i++){
 }
 
 // AETHER_WORLD_DETAIL_PASS_V1: distant mountain silhouettes add scale to the world.
-const mountainMat=new THREE.MeshStandardMaterial({color:0x222d3b,roughness:1,flatShading:true});
-const ridgeMat=new THREE.MeshStandardMaterial({color:0x303747,roughness:1,flatShading:true});
+const mountainMat=new THREE.MeshStandardMaterial({color:0x536a70,roughness:1,flatShading:true});
+const ridgeMat=new THREE.MeshStandardMaterial({color:0x73817b,roughness:1,flatShading:true});
 for(let i=0;i<22;i++){
   const ang=(-Math.PI*.5)+(i/21)*Math.PI*1.1;
   const radius=92+(i%4)*9,height=18+(i%5)*8,width=13+(i%3)*7;
