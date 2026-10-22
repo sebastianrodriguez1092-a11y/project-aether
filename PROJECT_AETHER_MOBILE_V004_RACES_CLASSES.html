@@ -162,19 +162,20 @@ function makeSkyTexture(){
   g.fillStyle=neb;g.fillRect(400,0,550,450);
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;return tex;
 }
+const mapHideObjects=[];
 const skyDome=new THREE.Mesh(new THREE.SphereGeometry(175,24,16),new THREE.MeshBasicMaterial({map:makeSkyTexture(),side:THREE.BackSide,depthWrite:false,fog:false}));
-skyDome.renderOrder=-10;scene.add(skyDome);
+skyDome.renderOrder=-10;scene.add(skyDome);mapHideObjects.push(skyDome);
 const moonDisc=new THREE.Mesh(new THREE.SphereGeometry(3.1,24,16),new THREE.MeshBasicMaterial({color:0xcbd9ef}));
-moonDisc.position.set(34,39,-116);scene.add(moonDisc);
+moonDisc.position.set(34,39,-116);scene.add(moonDisc);mapHideObjects.push(moonDisc);
 const moonHalo=new THREE.Mesh(new THREE.SphereGeometry(4.8,24,16),new THREE.MeshBasicMaterial({color:0x7f9dc9,transparent:true,opacity:.11,depthWrite:false}));
-moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);
+moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);mapHideObjects.push(moonHalo);
 
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
 camera.position.set(0,2.1,18);
 // AETHER_3D_WORLD_MAP_V1: full-scene orthographic survey mode; press M during play.
 const mapAspect=innerWidth/innerHeight;
-const mapCamera=new THREE.OrthographicCamera(-145*mapAspect,145*mapAspect,145,-145,.1,420);
-mapCamera.up.set(0,0,-1);mapCamera.position.set(0,170,-15);mapCamera.lookAt(0,0,-15);
+const mapCamera=new THREE.OrthographicCamera(-50*mapAspect,50*mapAspect,50,-50,.1,420);
+mapCamera.up.set(0,0,-1);mapCamera.position.set(0,100,-16);mapCamera.lookAt(0,0,-16);
 let mapMode=false;
 const mapNotice=document.createElement("div");
 mapNotice.textContent="MAPA 3D DEL MUNDO · Pulsa M o el botón para volver";
@@ -185,7 +186,7 @@ const mapButton=document.createElement("button");mapButton.id="aetherMapButton";
 mapButton.type="button";mapButton.textContent="VER MAPA 3D";
 mapButton.style.cssText="display:none;position:fixed;z-index:10012;top:16px;right:16px;padding:12px 15px;border:1px solid #d5bc79;border-radius:9px;background:#14251deF;color:#fff4d5;font:800 12px/1 system-ui;letter-spacing:.6px;box-shadow:0 5px 18px #0006;cursor:pointer";
 document.body.appendChild(mapButton);
-function toggleWorldMap(){mapMode=!mapMode;mapNotice.style.display=mapMode?"block":"none";mapButton.textContent=mapMode?"VOLVER AL JUEGO":"VER MAPA 3D";}
+function toggleWorldMap(){mapMode=!mapMode;mapHideObjects.forEach(o=>{o.visible=!mapMode});mapNotice.style.display=mapMode?"block":"none";mapButton.textContent=mapMode?"VOLVER AL JUEGO":"VER MAPA 3D";const hud=document.getElementById("hud");if(hud)hud.style.display=mapMode?"none":"block";const mobileHud=document.getElementById("mobileUI");if(mobileHud)mobileHud.style.display=mapMode?"none":(mobileActive()?"block":"none");}
 mapButton.addEventListener("click",toggleWorldMap);
 window.addEventListener("aether:character-ready",()=>{mapButton.style.display="block";});
 const controls=new PointerLockControls(camera,document.body);
@@ -325,7 +326,7 @@ for(let i=0;i<cloudCount;i++){
  cloudDummy.scale.set(5+cloudRand()*10,1.3+cloudRand()*2.8,3+cloudRand()*7);
  cloudDummy.updateMatrix();clouds.setMatrixAt(i,cloudDummy.matrix);
 }
-clouds.frustumCulled=false;scene.add(clouds);
+clouds.frustumCulled=false;scene.add(clouds);mapHideObjects.push(clouds);
 // AETHER_MOUNTAIN_COLOR_PASS_V1: blue-green distant ridgelines create depth without expensive effects.
 const aetherFarRidgeMat=new THREE.MeshStandardMaterial({color:0x9aafa9,roughness:1,flatShading:true});
 for(let i=0;i<16;i++){
@@ -333,7 +334,7 @@ for(let i=0;i<16;i++){
  const radius=125+(i%3)*8,height=30+(i%4)*11,width=18+(i%2)*8;
  const ridge=new THREE.Mesh(new THREE.ConeGeometry(width,height,5,1),aetherFarRidgeMat);
  ridge.position.set(Math.sin(ang)*radius,height*.43,-70-Math.cos(ang)*radius*.48);
- ridge.rotation.y=(i%5)*.24;ridge.receiveShadow=true;scene.add(ridge);
+ ridge.rotation.y=(i%5)*.24;ridge.receiveShadow=true;scene.add(ridge);mapHideObjects.push(ridge);
 }
 // AETHER_FANTASY_FOREST_V1: original low-poly treeline and leafy canopy, Warcraft-inspired fantasy palette.
 const aetherBark=new THREE.MeshStandardMaterial({color:0x68472e,roughness:1});
@@ -425,7 +426,7 @@ for(let i=0;i<22;i++){
   const mountain=new THREE.Mesh(new THREE.ConeGeometry(width,height,5+(i%3),1),i%2?mountainMat:ridgeMat);
   mountain.position.set(Math.sin(ang)*radius,height*.38,-64-Math.cos(ang)*radius*.58);
   mountain.rotation.y=(i%7)*.31;mountain.rotation.z=((i%3)-1)*.06;
-  mountain.receiveShadow=true;scene.add(mountain);
+  mountain.receiveShadow=true;scene.add(mountain);mapHideObjects.push(mountain);
 }
 // Broken paving slabs and scattered rubble: one shared geometry/material keeps draw calls modest.
 const slabGeo=new THREE.BoxGeometry(1,0.12,1.7);
@@ -463,7 +464,7 @@ for(let i=0;i<moteCount;i++){
 }
 const moteGeo=new THREE.BufferGeometry();moteGeo.setAttribute("position",new THREE.BufferAttribute(motePositions,3));
 const motes=new THREE.Points(moteGeo,new THREE.PointsMaterial({color:0x9bb8db,size:.075,transparent:true,opacity:.52,sizeAttenuation:true,depthWrite:false}));
-scene.add(motes);
+scene.add(motes);mapHideObjects.push(motes);
 // Tall weathered obelisks frame the approach and make the portal read clearly at a distance.
 for(const side of [-1,1]){
   const pillar=box(side*7.2,4.8,-43,1.1,9.6,1.1,stone);
@@ -493,7 +494,7 @@ let vy=0,onGround=true,health=100,attackCooldown=0;
 const clock=new THREE.Clock();
 addEventListener("keydown",e=>{keys[e.code]=true;if(e.code==="Space"&&onGround){vy=7;onGround=false}});
 addEventListener("keyup",e=>keys[e.code]=false);
-addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const ar=innerWidth/innerHeight;mapCamera.left=-145*ar;mapCamera.right=145*ar;mapCamera.top=145;mapCamera.bottom=-145;mapCamera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const ar=innerWidth/innerHeight;mapCamera.left=-50*ar;mapCamera.right=50*ar;mapCamera.top=50;mapCamera.bottom=-50;mapCamera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
 // Start with character creation. Pointer lock is requested only after class selection.
 document.getElementById("startBtn").onclick=()=>{
   document.getElementById("start").style.display="none";
