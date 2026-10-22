@@ -20,7 +20,9 @@ try {
   const pageErrors = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForFunction(() => window.__AETHER_3D_READY === true, { timeout: 30000 });
+  await page.waitForFunction(() => window.__AETHER_3D_READY === true, undefined, { timeout: 30000 });
+  await page.waitForFunction(() => window.__AETHER_TEXTURE_STATUS && window.__AETHER_TEXTURE_STATUS !== "loading", undefined, { timeout: 20000 });
+  assert.equal(await page.evaluate(() => window.__AETHER_TEXTURE_STATUS), "loaded", "Real terrain image did not load");
   assert.ok(await page.locator("#game").count(), "3D canvas missing");
   assert.ok(await page.locator("#game").evaluate(c => c.width > 0 && c.height > 0), "3D canvas has no dimensions");
 
@@ -30,7 +32,7 @@ try {
   await page.waitForFunction(() => getComputedStyle(document.querySelector("#classSelect")).display !== "none");
   await page.locator(".classCard").first().click();
   await page.locator("#classContinue").click();
-  await page.waitForFunction(() => window.__AETHER_CHARACTER && document.querySelector("#aetherMapButton") && getComputedStyle(document.querySelector("#aetherMapButton")).display !== "none");
+  await page.waitForFunction(() => window.__AETHER_CHARACTER && document.querySelector("#aetherMapButton") && getComputedStyle(document.querySelector("#aetherMapButton")).display !== "none", undefined, { timeout: 10000 });
   await page.waitForTimeout(900);
   await page.locator("#aetherMapButton").click();
   await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VOLVER"));
