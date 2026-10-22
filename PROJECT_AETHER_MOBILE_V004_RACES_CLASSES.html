@@ -538,5 +538,27 @@ classContinue.addEventListener("click",()=>{
  </div>
 </div>
 
+<!-- Independent launch fallback: runs even if the Three.js module fails to load. -->
+<script>
+(function () {
+  function wireAetherLaunch() {
+    var startBtn = document.getElementById("startBtn");
+    var startScreen = document.getElementById("start");
+    var raceScreen = document.getElementById("raceSelect");
+    if (!startBtn || !startScreen || !raceScreen) return;
+    startBtn.addEventListener("click", function () {
+      startScreen.style.display = "none";
+      raceScreen.style.display = "flex";
+      raceScreen.style.zIndex = "9999";
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wireAetherLaunch, { once: true });
+  } else {
+    wireAetherLaunch();
+  }
+})();
+</script>
+
 </body>
 </html>
