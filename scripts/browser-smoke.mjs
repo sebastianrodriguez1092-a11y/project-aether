@@ -1,12 +1,24 @@
 import fs from "node:fs";
 import http from "node:http";
+import path from "node:path";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
 const html = fs.readFileSync("PROJECT_AETHER_MOBILE_V004_RACES_CLASSES.html", "utf8");
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-  res.end(html);
+  const pathname = decodeURIComponent((req.url || "/").split("?")[0]);
+  if (pathname === "/" || pathname.endsWith("PROJECT_AETHER_MOBILE_V004_RACES_CLASSES.html")) {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    return res.end(html);
+  }
+  const file = path.join(process.cwd(), pathname.replace(/^\//, ""));
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+    const ext = path.extname(file);
+    const type = ext === ".js" ? "text/javascript; charset=utf-8" : "application/octet-stream";
+    res.writeHead(200, { "content-type": type, "cache-control": "no-store" });
+    return res.end(fs.readFileSync(file));
+  }
+  res.writeHead(404);res.end("Not found");
 });
 await new Promise(resolve => server.listen(4173, "127.0.0.1", resolve));
 
@@ -33,11 +45,9 @@ try {
   assert.ok(await page.locator("#aetherPrologue").count(), "3D cinematic prologue did not appear");
   assert.ok(await page.locator("#aetherPrologue canvas").count(), "Prologue 3D canvas missing");
   await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, animations: "disabled" });
-  await page.locator("#aetherBeginStory").click();
-  await page.locator("#aetherBeginStory").click();
-  await page.locator("#aetherBeginStory").click();
-  await page.locator("#aetherBeginStory").click();
+  for(let i=0;i<4;i++) await page.locator("#aetherBeginStory").click();
   await page.waitForFunction(() => window.__AETHER_PROLOGUE_COMPLETE === true, undefined, { timeout: 5000 });
+  await page.waitForTimeout(1200);
   assert.equal(await page.locator("#hud").evaluate(el => getComputedStyle(el).display), "block", "HUD did not activate after prologue");
   const visibleErrors = await page.locator("#aetherErrorPanel").count() ? await page.locator("#aetherErrorPanel").innerText() : "";
   assert.equal(visibleErrors, "", "Runtime error panel appeared: " + visibleErrors);
