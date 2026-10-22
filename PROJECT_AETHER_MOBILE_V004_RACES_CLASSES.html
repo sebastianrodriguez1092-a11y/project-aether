@@ -182,6 +182,17 @@ window.addEventListener("keydown",e=>{
     e.preventDefault();mapMode=!mapMode;mapNotice.style.display=mapMode?"block":"none";
   }
 });
+ // AETHER_COMBAT_MODEL_V1: first-person weapon model so attacks have visible feedback.
+const weaponRig=new THREE.Group();camera.add(weaponRig);weaponRig.position.set(.48,-.40,-.72);weaponRig.rotation.set(.12,-.08,-.28);
+const weaponSteel=new THREE.MeshStandardMaterial({color:0x9daebe,metalness:.88,roughness:.22});
+const weaponGrip=new THREE.MeshStandardMaterial({color:0x241b20,metalness:.25,roughness:.72});
+const weaponRune=new THREE.MeshStandardMaterial({color:0x7dbbff,emissive:0x267aff,emissiveIntensity:2.2,metalness:.6,roughness:.2});
+const blade=new THREE.Mesh(new THREE.BoxGeometry(.105,.92,.045),weaponSteel);blade.position.y=.55;blade.castShadow=true;weaponRig.add(blade);
+const bladeEdge=new THREE.Mesh(new THREE.BoxGeometry(.025,.86,.05),weaponRune);bladeEdge.position.set(.057,.55,0);weaponRig.add(bladeEdge);
+const guard=new THREE.Mesh(new THREE.BoxGeometry(.36,.075,.09),weaponRune);guard.position.y=.05;weaponRig.add(guard);
+const grip=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.34,8),weaponGrip);grip.position.y=-.15;weaponRig.add(grip);
+const pommel=new THREE.Mesh(new THREE.SphereGeometry(.075,8,8),weaponRune);pommel.position.y=-.34;weaponRig.add(pommel);
+let weaponSwing=0;
 scene.add(camera);
 
 const composer=new EffectComposer(renderer);
@@ -403,9 +414,22 @@ controls.addEventListener("unlock",()=>document.getElementById("start").style.di
 const enemyMat=new THREE.MeshStandardMaterial({color:0x34233d,roughness:.65,metalness:.15});
 const eyeMat=new THREE.MeshBasicMaterial({color:0xff3c62});
 const enemy={group:new THREE.Group(),hp:100,pos:new THREE.Vector3(0,0,-30),hitFlash:0,dead:false};
-const body=new THREE.Mesh(new THREE.CapsuleGeometry(.75,1.3,5,10),enemyMat);body.position.y=1.35;body.castShadow=true;enemy.group.add(body);
-const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.7,1),enemyMat);head.position.y=2.6;head.castShadow=true;enemy.group.add(head);
-for(const x of [-.25,.25]){const e=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),eyeMat);e.position.set(x,2.65,-.62);enemy.group.add(e)}
+const armorMat=new THREE.MeshStandardMaterial({color:0x202631,roughness:.42,metalness:.62});
+const trimMat=new THREE.MeshStandardMaterial({color:0x6b536e,roughness:.34,metalness:.78});
+const boneMat=new THREE.MeshStandardMaterial({color:0x8c8792,roughness:.7,metalness:.1});
+const body=new THREE.Mesh(new THREE.CapsuleGeometry(.65,1.18,5,10),enemyMat);body.position.y=1.35;body.castShadow=true;enemy.group.add(body);
+const chest=new THREE.Mesh(new THREE.OctahedronGeometry(.76,1),armorMat);chest.position.set(0,1.7,-.05);chest.scale.set(1.12,1.0,.72);chest.castShadow=true;enemy.group.add(chest);
+const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.58,1),armorMat);head.position.y=2.62;head.castShadow=true;enemy.group.add(head);
+const helmFront=new THREE.Mesh(new THREE.BoxGeometry(.55,.16,.18),trimMat);helmFront.position.set(0,2.83,-.45);enemy.group.add(helmFront);
+for(const side of [-1,1]){
+  const horn=new THREE.Mesh(new THREE.ConeGeometry(.16,.82,6),boneMat);horn.position.set(side*.43,3.08,-.02);horn.rotation.z=side*.48;horn.rotation.x=-.15;horn.castShadow=true;enemy.group.add(horn);
+  const shoulder=new THREE.Mesh(new THREE.DodecahedronGeometry(.48,1),armorMat);shoulder.position.set(side*.82,2.02,0);shoulder.scale.set(1,.82,1);shoulder.castShadow=true;enemy.group.add(shoulder);
+  const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.19,.72,4,7),enemyMat);arm.position.set(side*.94,1.38,-.02);arm.rotation.z=-side*.18;arm.castShadow=true;enemy.group.add(arm);
+  const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.23,.68,4,7),armorMat);leg.position.set(side*.38,.48,.02);leg.castShadow=true;enemy.group.add(leg);
+  const knee=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),trimMat);knee.position.set(side*.38,.48,-.18);enemy.group.add(knee);
+}
+const sigil=new THREE.Mesh(new THREE.OctahedronGeometry(.24,1),weaponRune);sigil.position.set(0,1.72,-.52);enemy.group.add(sigil);
+for(const x of [-.25,.25]){const e=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),eyeMat);e.position.set(x,2.65,-.55);enemy.group.add(e)}
 enemy.group.position.copy(enemy.pos);scene.add(enemy.group);
 const enemyLight=new THREE.PointLight(0xff1f55,5,8,2);enemyLight.position.set(0,2.4,0);enemy.group.add(enemyLight);
 
@@ -424,7 +448,7 @@ function flashMessage(t){
 }
 function attack(){
   if((!controls.isLocked && !mobileActive()) || attackCooldown>0 || enemy.dead || stamina<14)return;
-  attackCooldown=.32; stamina-=14;
+  attackCooldown=.32; weaponSwing=.26; stamina-=14;
   const now=performance.now();
   comboCount=(now-lastAttack<850)?Math.min(comboCount+1,5):1; lastAttack=now; comboTimer=.9;
   comboEl.textContent="COMBO x"+comboCount; comboEl.style.opacity=1;
@@ -480,7 +504,8 @@ function update(dt){
   if(camera.position.y<=2.1){camera.position.y=2.1;vy=0;onGround=true}
   camera.position.x=Math.max(-14,Math.min(14,camera.position.x));
   camera.position.z=Math.max(-52,Math.min(22,camera.position.z));
-  attackCooldown=Math.max(0,attackCooldown-dt);
+  attackCooldown=Math.max(0,attackCooldown-dt);weaponSwing=Math.max(0,weaponSwing-dt);
+  const swing=weaponSwing>0?Math.sin((.26-weaponSwing)/.26*Math.PI):0;weaponRig.rotation.z=-.28-swing*1.15;weaponRig.rotation.x=.12+swing*.42;
   stamina=Math.min(100,stamina+dt*24); staminaEl.style.width=stamina+"%";
   comboTimer-=dt; if(comboTimer<=0){comboCount=0;comboEl.style.opacity=0}
   const enemyDistance=enemy.group.position.distanceTo(camera.position);
