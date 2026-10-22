@@ -9,6 +9,10 @@ const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
 assert.ok(scripts.length >= 3, "Expected the 3D module and independent UI/diagnostic scripts");
 for (let i = 0; i < scripts.length; i++) {
   let source = scripts[i][2];
+  if (scripts[i][1].includes("importmap")) {
+    JSON.parse(source);
+    continue;
+  }
   if (/\btype=["']module["']/.test(scripts[i][1])) {
     source = source.replace(/^\s*import\s+.*?;\s*$/gm, "");
   }
