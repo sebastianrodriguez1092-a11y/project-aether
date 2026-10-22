@@ -535,7 +535,7 @@ function loop(){
     perfWindow=0;perfFrames=0;
   }
   // Map mode shows the entire 3D level from above; gameplay adapts post-processing to performance.
-  mapPlayerMarker.position.set(camera.position.x,.8,camera.position.z);
+  mapPlayerMarker.position.set(camera.position.x,.8,camera.position.z);weaponRig.visible=!mapMode;
   if(mapMode) renderer.render(scene,mapCamera);
   else if(innerWidth<=800||lowPerfMode) renderer.render(scene,camera); else composer.render();
   const mp=moteGeo.attributes.position;
