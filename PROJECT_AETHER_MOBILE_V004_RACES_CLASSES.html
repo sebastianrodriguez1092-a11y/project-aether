@@ -172,6 +172,7 @@ const moonHalo=new THREE.Mesh(new THREE.SphereGeometry(4.8,24,16),new THREE.Mesh
 moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);mapHideObjects.push(moonHalo);
 
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
+camera.rotation.order="YXZ";
 camera.position.set(0,2.1,18);
 // AETHER_3D_WORLD_MAP_V1: full-scene orthographic survey mode; press M during play.
 const mapAspect=innerWidth/innerHeight;
@@ -215,6 +216,7 @@ composer.addPass(new RenderPass(scene,camera));
 let perfScale=Math.min(devicePixelRatio||1,1.25),perfWindow=0,perfFrames=0,lowPerfMode=false,slowWindows=0,fastWindows=0;
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.45,0.65,0.82);
 composer.addPass(bloom);
+composer.addPass(new OutputPass());
 
 const hemi=new THREE.HemisphereLight(0xd8efff,0x4c6946,1.8);
 scene.add(hemi);
