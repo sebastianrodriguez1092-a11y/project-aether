@@ -219,19 +219,21 @@ function makeGroundTexture(){
   const g=c.getContext("2d"),im=g.createImageData(512,512);
   let seed=91377;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
   for(let i=0;i<im.data.length;i+=4){
-    const n=(rnd()-.5)*27,base=39+n;
-    im.data[i]=Math.max(0,base*.92);im.data[i+1]=Math.max(0,base*.98);
-    im.data[i+2]=Math.max(0,base*1.05);im.data[i+3]=255;
+    // AETHER_GRASS_TEXTURE_V1: mottled greens with warm earth flecks for a readable fantasy landscape.
+    const n=(rnd()-.5)*38,patch=rnd()>.88?-18:0;
+    im.data[i]=Math.max(0,72+n+patch*.65);
+    im.data[i+1]=Math.max(0,112+n+patch);
+    im.data[i+2]=Math.max(0,54+n+patch*.35);im.data[i+3]=255;
   }
   g.putImageData(im,0,0);
   for(let i=0;i<1500;i++){
     const x=rnd()*512,y=rnd()*512,r=1+rnd()*8;
-    g.fillStyle=rnd()>.5?"rgba(4,7,11,.30)":"rgba(151,160,169,.10)";
+    g.fillStyle=rnd()>.5?"rgba(30,54,24,.28)":"rgba(205,187,117,.15)";
     g.beginPath();g.ellipse(x,y,r,r*(.35+rnd()),rnd()*Math.PI,0,Math.PI*2);g.fill();
   }
   for(let i=0;i<115;i++){
     const x=rnd()*512,y=rnd()*512;
-    g.strokeStyle="rgba(4,7,10,.28)";g.lineWidth=.5+rnd()*1.4;
+    g.strokeStyle="rgba(28,55,23,.32)";g.lineWidth=.5+rnd()*1.4;
     g.beginPath();g.moveTo(x,y);g.lineTo(x+(rnd()-.5)*30,y+(rnd()-.5)*20);g.stroke();
   }
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(18,18);
