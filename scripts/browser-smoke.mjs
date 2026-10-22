@@ -24,7 +24,9 @@ try {
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   page.on("requestfailed", req => failedRequests.push({url:req.url(),error:req.failure()?.errorText}));
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForFunction(() => window.__AETHER_3D_READY === true, undefined, { timeout: 30000 });
+  await page.waitForTimeout(8000);
+  const startup = await page.evaluate(() => ({ready:window.__AETHER_3D_READY===true, error:document.querySelector("#aetherErrorPanel")?.innerText||"", texture:window.__AETHER_TEXTURE_STATUS||"not-started", canvas:!!document.querySelector("#game")}));
+  if (!startup.ready) throw new Error("3D startup failed: "+JSON.stringify({startup,pageErrors,consoleErrors,failedRequests}));
   await page.waitForFunction(() => window.__AETHER_TEXTURE_STATUS && window.__AETHER_TEXTURE_STATUS !== "loading", undefined, { timeout: 20000 });
   assert.equal(await page.evaluate(() => window.__AETHER_TEXTURE_STATUS), "loaded", "Real terrain image did not load");
   assert.ok(await page.locator("#game").count(), "3D canvas missing");
