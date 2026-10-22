@@ -257,10 +257,7 @@ textureLoader.load("https://threejs.org/examples/textures/terrain/grasslight-big
   tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   matGround.map=tex;matGround.color.setHex(0x747b78);matGround.needsUpdate=true;
 },undefined,()=>{});
-textureLoader.load("https://threejs.org/examples/textures/terrain/grasslight-big-nm.jpg",tex=>{
-  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(22,22);
-  matGround.normalMap=tex;matGround.normalScale.set(.28,.28);matGround.needsUpdate=true;
-},undefined,()=>{});
+// The upstream terrain pack has no matching normal map; avoid a broken network request.
 const mapPlayerMarker=new THREE.Mesh(new THREE.ConeGeometry(1.25,2.4,3),new THREE.MeshBasicMaterial({color:0x54f4ff,depthTest:false}));
 mapPlayerMarker.rotation.x=Math.PI/2;mapPlayerMarker.renderOrder=20;scene.add(mapPlayerMarker);
 
