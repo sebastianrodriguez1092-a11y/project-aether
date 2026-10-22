@@ -287,6 +287,42 @@ for(let i=0;i<24;i++){
   rock.scale.y=.55+Math.random()*.8;rock.castShadow=true;rock.receiveShadow=true;scene.add(rock);
 }
 
+// AETHER_FANTASY_FOREST_V1: original low-poly treeline and leafy canopy, Warcraft-inspired fantasy palette.
+const aetherBark=new THREE.MeshStandardMaterial({color:0x68472e,roughness:1});
+const aetherLeaves=[
+ new THREE.MeshStandardMaterial({color:0x3f8547,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x669b45,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x2c7256,roughness:1})
+];
+const aetherTrunkGeo=new THREE.CylinderGeometry(.22,.42,3.8,7);
+const aetherCrownGeo=new THREE.IcosahedronGeometry(2.0,1);
+const aetherTreeCount=72;
+const aetherTrunks=new THREE.InstancedMesh(aetherTrunkGeo,aetherBark,aetherTreeCount);
+const aetherCrowns=aetherLeaves.map(m=>new THREE.InstancedMesh(aetherCrownGeo,m,aetherTreeCount));
+const aetherDummy=new THREE.Object3D();
+let aetherForestSeed=64129;
+const aetherRand=()=>{aetherForestSeed=(aetherForestSeed*1664525+1013904223)>>>0;return aetherForestSeed/4294967296;};
+for(let i=0;i<aetherTreeCount;i++){
+ const side=i%2===0?-1:1;
+ const x=side*(10+aetherRand()*27);
+ const z=7-aetherRand()*83;
+ const scale=.72+aetherRand()*.85;
+ const height=2.5+aetherRand()*2.1;
+ aetherDummy.position.set(x,height*.5,z);
+ aetherDummy.rotation.set(0,aetherRand()*Math.PI,0);
+ aetherDummy.scale.set(scale,height/3.8,scale);
+ aetherDummy.updateMatrix();aetherTrunks.setMatrixAt(i,aetherDummy.matrix);
+ for(let j=0;j<aetherCrowns.length;j++){
+   aetherDummy.position.set(x,height+(.5+j*.48),z);
+   aetherDummy.rotation.set(aetherRand()*.2,aetherRand()*Math.PI,aetherRand()*.2);
+   const crownScale=scale*(1.08-j*.16);
+   aetherDummy.scale.set(crownScale,crownScale*(.9+aetherRand()*.3),crownScale);
+   aetherDummy.updateMatrix();aetherCrowns[j].setMatrixAt(i,aetherDummy.matrix);
+ }
+}
+aetherTrunks.castShadow=true;aetherTrunks.receiveShadow=true;scene.add(aetherTrunks);
+for(const canopy of aetherCrowns){canopy.castShadow=true;canopy.receiveShadow=true;scene.add(canopy);}
+
 // Ruined walls / arches
 for(let z=-8;z>-48;z-=8){
   box(-10,2,z,2.2,4,7,stone);
