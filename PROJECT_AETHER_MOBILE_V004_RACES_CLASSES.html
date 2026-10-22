@@ -444,6 +444,7 @@ document.getElementById("startBtn").onclick=()=>{
    if(!mobileActive() && controls && !controls.isLocked) controls.lock();
  });
 
+window.__AETHER_3D_READY=true;
 </script>
 
 <div id="mobileUI">
@@ -504,69 +505,95 @@ document.getElementById("startBtn").onclick=()=>{
  </div>
 </div>
 
-<!-- Character creation works independently from Three.js module loading. -->
+<!-- Reliable standalone character creator and playable fallback for browsers where WebGL modules fail. -->
+<style>
+#raceSelect,#classSelect{pointer-events:auto!important}
+#raceSelect{z-index:10020!important}
+#classSelect{z-index:10021!important}
+.racePanel,.classPanel{max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overscroll-behavior:contain}
+.raceCard,.classCard{pointer-events:auto!important;user-select:none}
+.raceDetails,.classDetails{font-size:14px!important;line-height:1.65!important;color:#e2e9f7!important;background:#111a29}
+#loreTitle{font-size:16px!important}
+#raceContinue,#classContinue{position:sticky;bottom:0;z-index:2;min-height:48px;box-shadow:0 -8px 18px #05081088}
+#raceContinue:disabled,#classContinue:disabled{opacity:.45;cursor:not-allowed}
+#aetherFallback{position:fixed;inset:0;z-index:10010;display:none;background:#080e18;color:#edf3ff;font:15px/1.5 system-ui}
+#aetherFallback canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#aetherFallbackHud{position:absolute;left:16px;top:14px;padding:12px 16px;background:#07101ddd;border:1px solid #536680;border-radius:10px;max-width:min(440px,90vw)}
+#aetherFallbackHelp{position:absolute;left:16px;bottom:16px;padding:10px 14px;background:#07101ddd;border:1px solid #536680;border-radius:10px}
+#aetherFallback button{margin-top:8px}
+@media(max-width:800px){.raceGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.raceCard{min-height:250px!important}.raceArt{height:115px!important}.racePanel,.classPanel{padding:12px!important}.raceTop h2{font-size:21px!important;letter-spacing:2px!important}}
+@media(max-width:480px){.raceGrid{grid-template-columns:1fr!important}.raceCard{display:grid;grid-template-columns:100px 1fr;min-height:0!important}.raceArt{height:100%!important;min-height:120px}.raceInfo{padding:10px!important}.raceInfo p{font-size:12px!important}}
+</style>
 <script>
 (function(){
-  var raceLore={
-    Aurelio:{title:"Aurelio · Los constructores",desc:"Tu pueblo cree que la civilización sobrevivió porque aprendió a dominar la Grieta. Pero los archivos reales tienen páginas arrancadas.",traits:"RASGOS: adaptable y disciplinado. BONO: equilibrio entre salud y resistencia. DEBILIDAD: sin especialización extrema.",bonus:"Equilibrio"},
-    Sylvar:{title:"Sylvar · La memoria verde",desc:"Los árboles de Narai guardan ecos de personas que todavía viven. Tu pueblo sabe que algo está intentando regresar.",traits:"RASGOS: vínculo con la naturaleza y percepción aguda. BONO: recuperación y detección mejoradas. DEBILIDAD: menor resistencia al daño pesado.",bonus:"Percepción"},
-    Dravak:{title:"Dravak · El corazón bajo la montaña",desc:"Los mineros de Karth han encontrado una puerta bajo kilómetros de roca. Al otro lado se escucha una ciudad respirando.",traits:"RASGOS: fortaleza y voluntad volcánica. BONO: salud y resistencia física. DEBILIDAD: agilidad reducida.",bonus:"Fortaleza"},
-    Velari:{title:"Velari · La marca",desc:"Tu cuerpo reacciona ante lugares tocados por la Fractura. Otros Velari desaparecieron intentando descubrir por qué.",traits:"RASGOS: sensibilidad a la Fractura. BONO: afinidad arcana y movilidad. DEBILIDAD: defensa física más baja.",bonus:"Afinidad arcana"},
-    Varkyn:{title:"Varkyn · Los que sobrevivieron",desc:"Varken fue destruida y los vencedores escribieron la historia. Los Varkyn conservan una versión distinta, transmitida en secreto.",traits:"RASGOS: supervivencia y astucia. BONO: resistencia a estados negativos. DEBILIDAD: menor afinidad con la magia pura.",bonus:"Supervivencia"},
-    Aethari:{title:"Aethari · Antes del mundo",desc:"Nadie sabe si los Aethari fueron creadores, guardianes o prisioneros de la Grieta. Algunas ruinas parecen reconocer tu presencia.",traits:"RASGOS: herencia ancestral. BONO: percepción y energía arcana. DEBILIDAD: poca resistencia inicial.",bonus:"Energía arcana"}
-  };
-  var classDetails={
-    "Arcane Knight":"Combina espada y magia. BONO: versatilidad en combate. ESTILO: primera línea y ataques arcanos.",
-    "Shadow Hunter":"Usa arco, sigilo y trampas. BONO: movilidad y precisión. ESTILO: ataques a distancia.",
-    "Veil Disciple":"Canaliza fuerzas prohibidas. BONO: gran potencial mágico. RIESGO: depende del control de energía.",
-    "Grave Warden":"Absorbe daño y usa maldiciones. BONO: defensa y resistencia. ESTILO: combate prolongado."
-  };
-  var chosenRace=null,chosenClass=null;
-  function init(){
-    var raceScreen=document.getElementById("raceSelect"), classScreen=document.getElementById("classSelect");
-    var loreTitle=document.getElementById("loreTitle"),loreText=document.getElementById("loreText");
-    var raceContinue=document.getElementById("raceContinue"),classContinue=document.getElementById("classContinue");
-    if(!raceScreen||!classScreen||!loreTitle||!loreText||!raceContinue||!classContinue)return;
-    loreText.style.whiteSpace="pre-line";
-    document.addEventListener("click",function(e){
-      var card=e.target.closest && e.target.closest(".raceCard");
-      if(card && raceScreen.contains(card)){
-        chosenRace=card.dataset.race;
-        if(!raceLore[chosenRace])return;
-        raceScreen.querySelectorAll(".raceCard").forEach(function(c){c.classList.toggle("selected",c===card);});
-        loreTitle.textContent=raceLore[chosenRace].title;
-        loreText.textContent=raceLore[chosenRace].desc+"\n\n"+raceLore[chosenRace].traits;
-        raceContinue.style.display="block";
-        raceContinue.disabled=false;
-      }
-      var discipline=e.target.closest && e.target.closest(".classCard");
-      if(discipline && classScreen.contains(discipline)){
-        chosenClass=discipline.dataset.class;
-        if(!classDetails[chosenClass])return;
-        classScreen.querySelectorAll(".classCard").forEach(function(c){c.classList.toggle("selected",c===discipline);});
-        document.getElementById("classDetails").textContent=classDetails[chosenClass];
-        classContinue.style.display="block";
-        classContinue.disabled=false;
-      }
-    });
-    raceContinue.addEventListener("click",function(){
-      if(!chosenRace){loreTitle.textContent="Primero elige una raza";return;}
-      raceScreen.style.display="none";
-      classScreen.style.display="flex";
-      classScreen.style.zIndex="10001";
-    });
-    classContinue.addEventListener("click",function(){
-      if(!chosenClass){document.getElementById("classDetails").textContent="Primero selecciona una disciplina.";return;}
-      classScreen.style.display="none";
-      window.__AETHER_CHARACTER={race:chosenRace,class:chosenClass};
-      var message=document.getElementById("message");
-      if(message){message.textContent="ORIGEN: "+chosenRace+" · CLASE: "+chosenClass;message.style.opacity="1";setTimeout(function(){message.style.opacity="0";},2600);}
-      window.dispatchEvent(new CustomEvent("aether:character-ready",{detail:window.__AETHER_CHARACTER}));
-    });
-    // Explicitly expose current choices for debugging and future gameplay systems.
-    window.__AETHER_CHARACTER={race:null,class:null};
-  }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+"use strict";
+var lore={
+ Aurelio:{title:"Aurelio · Humanos de Aurelia",desc:"Constructores de reinos y guardianes de fronteras. Creen que la Grieta puede controlarse.",traits:"RASGOS: adaptabilidad y disciplina. BONO: equilibrio entre salud y resistencia. DEBILIDAD: ninguna especialización extrema."},
+ Sylvar:{title:"Sylvar · Hijos del bosque",desc:"La memoria de los bosques vive en ellos; algunos recuerdan cosas que todavía no han ocurrido.",traits:"RASGOS: percepción y vínculo natural. BONO: detección y recuperación. DEBILIDAD: menos resistencia al daño pesado."},
+ Dravak:{title:"Dravak · Nacidos del fuego",desc:"Mineros y guerreros de las montañas volcánicas de Karth. Su sangre guarda minerales transformados por la Grieta.",traits:"RASGOS: fortaleza y voluntad. BONO: salud y resistencia física. DEBILIDAD: menor agilidad."},
+ Velari:{title:"Velari · Los marcados",desc:"Descendientes de quienes sobrevivieron al contacto directo con la Fractura. Son perseguidos y temidos.",traits:"RASGOS: sensibilidad arcana y movilidad. BONO: afinidad con la Grieta. DEBILIDAD: defensa física menor."},
+ Varkyn:{title:"Varkyn · Los exiliados",desc:"Supervivientes de una tierra devastada. Conservan la historia que los reinos vencedores intentaron borrar.",traits:"RASGOS: astucia y supervivencia. BONO: resistencia a estados negativos. DEBILIDAD: menor afinidad mágica."},
+ Aethari:{title:"Aethari · Los antiguos",desc:"Civilización casi desaparecida. Sus ruinas existen donde no deberían, y algunas parecen reconocerlos.",traits:"RASGOS: herencia ancestral y percepción. BONO: energía arcana. DEBILIDAD: menor resistencia inicial."}
+};
+var classes={
+ "Arcane Knight":{name:"Caballero Arcano",text:"ESPADA + MAGIA. Versátil en primera línea; combina ataques físicos y energía de la Grieta."},
+ "Shadow Hunter":{name:"Cazador de Sombras",text:"ARCO + SIGILO. Movilidad, precisión, trampas y ataques desde la distancia."},
+ "Veil Disciple":{name:"Discípulo del Velo",text:"MAGIA + INVOCACIÓN. Gran potencial arcano; requiere administrar su energía."},
+ "Grave Warden":{name:"Guardián de Ceniza",text:"DEFENSA + MALDICIONES. Aguanta combates prolongados y transforma maldiciones en fuerza."}
+};
+var race=null,discipline=null,gameStarted=false,pos={x:0,z:0},enemyHp=100,attackFlash=0;
+function byId(id){return document.getElementById(id)}
+function ensureFallback(){
+ if(byId("aetherFallback"))return;
+ var root=document.createElement("div");root.id="aetherFallback";
+ root.innerHTML='<canvas id="aetherFallbackCanvas"></canvas><div id="aetherFallbackHud"><strong>PROJECT AETHER · MODO COMPATIBLE</strong><div id="aetherFallbackStatus">El motor 3D no respondió. Se activó una arena jugable compatible.</div><div id="aetherFallbackVitals">VITALIDAD: 100 · GUARDIÁN: 100</div><button id="aetherFallbackRestart">REINICIAR PARTIDA</button></div><div id="aetherFallbackHelp">Mover: WASD o flechas · Atacar: ESPACIO o clic · Objetivo: derrota al guardián y llega al portal.</div>';
+ document.body.appendChild(root);
+ byId("aetherFallbackRestart").addEventListener("click",function(){pos={x:0,z:0};enemyHp=100;attackFlash=0;drawFallback()});
+ root.addEventListener("click",function(e){if(e.target.tagName==="CANVAS")attack()});
+ window.addEventListener("keydown",function(e){if(!gameStarted)return;var k=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();if(k==="w"||k==="arrowup")pos.z=Math.max(-10,pos.z-.45);if(k==="s"||k==="arrowdown")pos.z=Math.min(10,pos.z+.45);if(k==="a"||k==="arrowleft")pos.x=Math.max(-8,pos.x-.45);if(k==="d"||k==="arrowright")pos.x=Math.min(8,pos.x+.45);if(k===" "){attack()}drawFallback()});
+ window.addEventListener("resize",drawFallback);
+}
+function drawFallback(){
+ var c=byId("aetherFallbackCanvas");if(!c||byId("aetherFallback").style.display==="none")return;
+ var w=c.clientWidth||innerWidth,h=c.clientHeight||innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+ if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
+ var x=c.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+ var g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,"#111e32");g.addColorStop(.6,"#29313d");g.addColorStop(1,"#080c13");x.fillStyle=g;x.fillRect(0,0,w,h);
+ x.fillStyle="#1a222b";x.beginPath();x.moveTo(w*.34,h*.36);x.lineTo(w*.66,h*.36);x.lineTo(w*.96,h);x.lineTo(w*.04,h);x.closePath();x.fill();
+ x.strokeStyle="#65758b";x.lineWidth=1;for(var i=0;i<13;i++){var yy=h*.38+i*i*h*.004; x.beginPath();x.moveTo(0,yy);x.lineTo(w,yy);x.stroke()}for(var j=-8;j<=8;j++){x.beginPath();x.moveTo(w/2+j*4,h*.38);x.lineTo(w/2+j*w*.065,h);x.stroke()}
+ var gateX=w*.5-pos.x*10,gateY=h*.25+pos.z*2;x.strokeStyle="#61dcff";x.lineWidth=5;x.shadowColor="#45d9ff";x.shadowBlur=22;x.strokeRect(gateX-w*.09,gateY,w*.18,h*.3);x.shadowBlur=0;x.fillStyle="#101827";x.fillRect(gateX-w*.07,gateY+12,w*.14,h*.27);
+ var ex=w*.5-pos.x*13,ey=h*.48-pos.z*4;x.fillStyle="#241724";x.beginPath();x.ellipse(ex,ey+34,34,46,0,0,Math.PI*2);x.fill();x.fillStyle="#9e365c";x.beginPath();x.arc(ex,ey,25,0,Math.PI*2);x.fill();x.fillStyle="#ff456d";x.fillRect(ex-12,ey-3,7,4);x.fillRect(ex+5,ey-3,7,4);
+ x.fillStyle="#e8efff";x.font="bold 14px system-ui";x.textAlign="center";x.fillText(enemyHp>0?"GUARDIÁN DE LA GRIETA":"GUARDIÁN DERROTADO",w/2,h*.12);
+ x.fillStyle="#341b2a";x.fillRect(w/2-85,h*.12+10,170,8);x.fillStyle="#f34f75";x.fillRect(w/2-85,h*.12+10,170*enemyHp/100,8);
+ x.fillStyle="#dbe8ff";x.fillRect(w/2-2,h*.53,4,18);x.fillRect(w/2-9,h*.60,18,3);
+ byId("aetherFallbackVitals").textContent="ORIGEN: "+(race||"—")+" · CLASE: "+(classes[discipline]?.name||"—")+" · GUARDIÁN: "+enemyHp+"%";
+ if(pos.z<=-9&&enemyHp<=0)byId("aetherFallbackStatus").textContent="¡Victoria! Has alcanzado la Puerta de Obsidiana.";
+ else if(pos.z<=-9)byId("aetherFallbackStatus").textContent="La puerta está sellada. Derrota al guardián con ESPACIO o clic.";
+ else byId("aetherFallbackStatus").textContent="Explora las ruinas, ataca al guardián y avanza hacia la puerta.";
+}
+function attack(){if(!gameStarted)return;if(Math.abs(pos.z)<5&&Math.abs(pos.x)<5)enemyHp=Math.max(0,enemyHp-10);drawFallback()}
+function showFallback(){
+ ensureFallback();gameStarted=true;byId("aetherFallback").style.display="block";
+ // If the 3D module never initialized, the compatible arena remains available and playable.
+ if(window.__AETHER_3D_READY!==true)drawFallback();
+ else {byId("aetherFallback").style.display="none";gameStarted=false}
+}
+function init(){
+ var rs=byId("raceSelect"),cs=byId("classSelect"),rc=byId("raceContinue"),cc=byId("classContinue"),lt=byId("loreTitle"),ld=byId("loreText"),cd=byId("classDetails");
+ if(!rs||!cs||!rc||!cc||!lt||!ld||!cd)return;
+ rc.disabled=true;cc.disabled=true;rc.style.display="block";cc.style.display="block";
+ ld.style.whiteSpace="pre-line";cd.style.whiteSpace="pre-line";
+ document.addEventListener("click",function(e){
+  var card=e.target.closest?e.target.closest(".raceCard"):null;
+  if(card&&rs.contains(card)){race=card.dataset.race;if(!lore[race])return;rs.querySelectorAll(".raceCard").forEach(function(q){q.classList.toggle("selected",q===card)});lt.textContent=lore[race].title;ld.textContent=lore[race].desc+"\n\n"+lore[race].traits;rc.disabled=false;rc.style.display="block";}
+  var cl=e.target.closest?e.target.closest(".classCard"):null;
+  if(cl&&cs.contains(cl)){discipline=cl.dataset.class;if(!classes[discipline])return;cs.querySelectorAll(".classCard").forEach(function(q){q.classList.toggle("selected",q===cl)});cd.textContent=classes[discipline].name+"\n"+classes[discipline].text;cc.disabled=false;cc.style.display="block";}
+ });
+ rc.addEventListener("click",function(){if(!race){lt.textContent="Selecciona una raza para continuar.";return}rs.style.display="none";cs.style.display="flex";cs.style.zIndex="10021";});
+ cc.addEventListener("click",function(){if(!discipline){cd.textContent="Selecciona una clase para continuar.";return}cs.style.display="none";window.__AETHER_CHARACTER={race:race,class:discipline};window.dispatchEvent(new CustomEvent("aether:character-ready",{detail:window.__AETHER_CHARACTER}));setTimeout(showFallback,700);});
+ byId("startBtn").addEventListener("click",function(){byId("start").style.display="none";rs.style.display="flex";rs.style.zIndex="10020";});
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
 </script>
 
