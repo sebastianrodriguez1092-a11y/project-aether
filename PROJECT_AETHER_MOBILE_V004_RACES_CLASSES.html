@@ -438,51 +438,11 @@ document.getElementById("startBtn").onclick=()=>{
 };
 
 
-// RACE SELECTION / LORE
-const raceSelect=document.getElementById("raceSelect");
-const raceCards=[...document.querySelectorAll(".raceCard")];
-const loreTitle=document.getElementById("loreTitle"),loreText=document.getElementById("loreText"),raceContinue=document.getElementById("raceContinue");
-const raceLore={
-"Aurelio":["Aurelio · Los constructores","Tu pueblo cree que la civilización sobrevivió porque aprendió a dominar la Grieta. Pero los archivos reales tienen páginas arrancadas."],
-"Sylvar":["Sylvar · La memoria verde","Los árboles de Narai guardan ecos de personas que todavía viven. Tu pueblo sabe que algo está intentando regresar."],
-"Dravak":["Dravak · El corazón bajo la montaña","Los mineros de Karth han encontrado una puerta bajo kilómetros de roca. Al otro lado se escucha una ciudad respirando."],
-"Velari":["Velari · La marca","Tu cuerpo reacciona ante lugares tocados por la Fractura. Otros Velari desaparecieron intentando descubrir por qué."],
-"Varkyn":["Varkyn · Los que sobrevivieron","Varken fue destruida y los vencedores escribieron la historia. Los Varkyn conservan una versión distinta, transmitida en secreto."],
-"Aethari":["Aethari · Antes del mundo","Nadie sabe si los Aethari fueron creadores, guardianes o prisioneros de la Grieta. Algunas ruinas parecen reconocer tu presencia."]
-};
-let selectedRace=null;
-raceCards.forEach(card=>card.addEventListener("click",()=>{
- raceCards.forEach(c=>c.classList.remove("selected"));card.classList.add("selected");
- selectedRace=card.dataset.race;loreTitle.textContent=raceLore[selectedRace][0];loreText.textContent=raceLore[selectedRace][1];
- raceContinue.style.display="block";
-}));
-raceContinue.addEventListener("click",()=>{
- raceSelect.style.display="none";
- document.getElementById("classSelect").style.display="flex";
-});
-
-
-const classSelect=document.getElementById("classSelect");
-const classCards=[...document.querySelectorAll(".classCard")];
-const classDetails=document.getElementById("classDetails");
-const classContinue=document.getElementById("classContinue");
-const classText={
-"Arcane Knight":"El Caballero Arcano comienza equilibrado entre acero y magia. Puede evolucionar hacia un duelista mágico o un guerrero de la Grieta.",
-"Shadow Hunter":"El Cazador de Sombras empieza con movilidad superior y ataques a distancia. Sus decisiones pueden llevarlo hacia cazador, asesino o explorador.",
-"Veil Disciple":"El Discípulo del Velo domina la energía inestable. Su poder es alto, pero abusar de él puede alterar recuerdos y relaciones.",
-"Grave Warden":"El Guardián de Ceniza resiste más daño y utiliza maldiciones. Puede convertirse en protector, verdugo o portador de una corrupción."
-};
-let selectedClass=null;
-classCards.forEach(c=>c.addEventListener("click",()=>{
- classCards.forEach(x=>x.classList.remove("selected"));c.classList.add("selected");
- selectedClass=c.dataset.class;classDetails.textContent=classText[selectedClass];classContinue.style.display="block";
-}));
-classContinue.addEventListener("click",()=>{
- classSelect.style.display="none";
- if(typeof flashMessage==="function")flashMessage("ORIGEN: "+(selectedRace||"DESCONOCIDO")+" · CLASE: "+selectedClass);
- // Desktop: lock the pointer after character creation so mouse-look and gameplay activate.
- if(!mobileActive()) controls.lock();
-});
+// The UI selection itself is initialized by a standalone script after the HTML.
+ // This module only connects the final character choice to desktop pointer-lock controls.
+ window.addEventListener("aether:character-ready",()=>{
+   if(!mobileActive() && controls && !controls.isLocked) controls.lock();
+ });
 
 </script>
 
@@ -543,6 +503,72 @@ classContinue.addEventListener("click",()=>{
   <button id="classContinue">ENTRAR EN AETHER</button>
  </div>
 </div>
+
+<!-- Character creation works independently from Three.js module loading. -->
+<script>
+(function(){
+  var raceLore={
+    Aurelio:{title:"Aurelio · Los constructores",desc:"Tu pueblo cree que la civilización sobrevivió porque aprendió a dominar la Grieta. Pero los archivos reales tienen páginas arrancadas.",traits:"RASGOS: adaptable y disciplinado. BONO: equilibrio entre salud y resistencia. DEBILIDAD: sin especialización extrema.",bonus:"Equilibrio"},
+    Sylvar:{title:"Sylvar · La memoria verde",desc:"Los árboles de Narai guardan ecos de personas que todavía viven. Tu pueblo sabe que algo está intentando regresar.",traits:"RASGOS: vínculo con la naturaleza y percepción aguda. BONO: recuperación y detección mejoradas. DEBILIDAD: menor resistencia al daño pesado.",bonus:"Percepción"},
+    Dravak:{title:"Dravak · El corazón bajo la montaña",desc:"Los mineros de Karth han encontrado una puerta bajo kilómetros de roca. Al otro lado se escucha una ciudad respirando.",traits:"RASGOS: fortaleza y voluntad volcánica. BONO: salud y resistencia física. DEBILIDAD: agilidad reducida.",bonus:"Fortaleza"},
+    Velari:{title:"Velari · La marca",desc:"Tu cuerpo reacciona ante lugares tocados por la Fractura. Otros Velari desaparecieron intentando descubrir por qué.",traits:"RASGOS: sensibilidad a la Fractura. BONO: afinidad arcana y movilidad. DEBILIDAD: defensa física más baja.",bonus:"Afinidad arcana"},
+    Varkyn:{title:"Varkyn · Los que sobrevivieron",desc:"Varken fue destruida y los vencedores escribieron la historia. Los Varkyn conservan una versión distinta, transmitida en secreto.",traits:"RASGOS: supervivencia y astucia. BONO: resistencia a estados negativos. DEBILIDAD: menor afinidad con la magia pura.",bonus:"Supervivencia"},
+    Aethari:{title:"Aethari · Antes del mundo",desc:"Nadie sabe si los Aethari fueron creadores, guardianes o prisioneros de la Grieta. Algunas ruinas parecen reconocer tu presencia.",traits:"RASGOS: herencia ancestral. BONO: percepción y energía arcana. DEBILIDAD: poca resistencia inicial.",bonus:"Energía arcana"}
+  };
+  var classDetails={
+    "Arcane Knight":"Combina espada y magia. BONO: versatilidad en combate. ESTILO: primera línea y ataques arcanos.",
+    "Shadow Hunter":"Usa arco, sigilo y trampas. BONO: movilidad y precisión. ESTILO: ataques a distancia.",
+    "Veil Disciple":"Canaliza fuerzas prohibidas. BONO: gran potencial mágico. RIESGO: depende del control de energía.",
+    "Grave Warden":"Absorbe daño y usa maldiciones. BONO: defensa y resistencia. ESTILO: combate prolongado."
+  };
+  var chosenRace=null,chosenClass=null;
+  function init(){
+    var raceScreen=document.getElementById("raceSelect"), classScreen=document.getElementById("classSelect");
+    var loreTitle=document.getElementById("loreTitle"),loreText=document.getElementById("loreText");
+    var raceContinue=document.getElementById("raceContinue"),classContinue=document.getElementById("classContinue");
+    if(!raceScreen||!classScreen||!loreTitle||!loreText||!raceContinue||!classContinue)return;
+    loreText.style.whiteSpace="pre-line";
+    document.addEventListener("click",function(e){
+      var card=e.target.closest && e.target.closest(".raceCard");
+      if(card && raceScreen.contains(card)){
+        chosenRace=card.dataset.race;
+        if(!raceLore[chosenRace])return;
+        raceScreen.querySelectorAll(".raceCard").forEach(function(c){c.classList.toggle("selected",c===card);});
+        loreTitle.textContent=raceLore[chosenRace].title;
+        loreText.textContent=raceLore[chosenRace].desc+"\n\n"+raceLore[chosenRace].traits;
+        raceContinue.style.display="block";
+        raceContinue.disabled=false;
+      }
+      var discipline=e.target.closest && e.target.closest(".classCard");
+      if(discipline && classScreen.contains(discipline)){
+        chosenClass=discipline.dataset.class;
+        if(!classDetails[chosenClass])return;
+        classScreen.querySelectorAll(".classCard").forEach(function(c){c.classList.toggle("selected",c===discipline);});
+        document.getElementById("classDetails").textContent=classDetails[chosenClass];
+        classContinue.style.display="block";
+        classContinue.disabled=false;
+      }
+    });
+    raceContinue.addEventListener("click",function(){
+      if(!chosenRace){loreTitle.textContent="Primero elige una raza";return;}
+      raceScreen.style.display="none";
+      classScreen.style.display="flex";
+      classScreen.style.zIndex="10001";
+    });
+    classContinue.addEventListener("click",function(){
+      if(!chosenClass){document.getElementById("classDetails").textContent="Primero selecciona una disciplina.";return;}
+      classScreen.style.display="none";
+      window.__AETHER_CHARACTER={race:chosenRace,class:chosenClass};
+      var message=document.getElementById("message");
+      if(message){message.textContent="ORIGEN: "+chosenRace+" · CLASE: "+chosenClass;message.style.opacity="1";setTimeout(function(){message.style.opacity="0";},2600);}
+      window.dispatchEvent(new CustomEvent("aether:character-ready",{detail:window.__AETHER_CHARACTER}));
+    });
+    // Explicitly expose current choices for debugging and future gameplay systems.
+    window.__AETHER_CHARACTER={race:null,class:null};
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
+</script>
 
 <!-- Independent launch fallback and visible diagnostics for module/runtime failures. -->
 <script>
