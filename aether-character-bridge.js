@@ -1,7 +1,7 @@
-// AETHER_CHARACTER_BRIDGE_V5
+// AETHER_CHARACTER_BRIDGE_V6
 (()=>{
 const loadScript=(src,attr,onload)=>{
-  const selector=`script[data-${attr}="1"]`;
+  const selector=`script[data-aether-loader="${attr}"]`;
   const existing=document.querySelector(selector);
   if(existing){
     if(onload){
@@ -12,7 +12,7 @@ const loadScript=(src,attr,onload)=>{
   }
   const s=document.createElement('script');
   s.src=src;
-  s.dataset[attr]='1';
+  s.setAttribute('data-aether-loader',attr);
   if(onload)s.addEventListener('load',onload,{once:true});
   s.addEventListener('load',()=>{s.dataset.loaded='1';});
   s.addEventListener('error',e=>{
@@ -24,21 +24,21 @@ const loadScript=(src,attr,onload)=>{
 };
 
 const loadBackgroundAssets=()=>{
-  if(!window.__AETHER_DETAILED_CHARACTERS_READY)loadScript('./aether-character-upgrade.js?v=20261022g','aether-character-upgrade');
-  loadScript('./aether-visual-overhaul.js?v=20261022g','aether-visual-overhaul');
+  if(!window.__AETHER_DETAILED_CHARACTERS_READY)loadScript('./aether-character-upgrade.js?v=20261022h','aether-character-upgrade');
+  loadScript('./aether-visual-overhaul.js?v=20261022h','aether-visual-overhaul');
 };
 
-const preparePrologue=()=>loadScript('./aether-prologue.js?v=20261022g','aether-prologue');
+const preparePrologue=()=>loadScript('./aether-prologue.js?v=20261022h','aether-prologue');
 
 const startPrologue=()=>{
   const launch=()=>{
     if(typeof window.AetherStartPrologue==='function')window.AetherStartPrologue();
     else window.__AETHER_PROLOGUE_ERROR='AetherStartPrologue was not defined after loading aether-prologue.js';
   };
-  const script=document.querySelector('script[data-aether-prologue="1"]');
+  const script=document.querySelector('script[data-aether-loader="aether-prologue"]');
   if(script&&script.dataset.loaded==='1')launch();
   else if(script)script.addEventListener('load',launch,{once:true});
-  else loadScript('./aether-prologue.js?v=20261022g','aether-prologue',launch);
+  else loadScript('./aether-prologue.js?v=20261022h','aether-prologue',launch);
 };
 
 const bind=async()=>{
