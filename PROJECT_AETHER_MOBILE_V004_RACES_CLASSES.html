@@ -173,13 +173,21 @@ const mapCamera=new THREE.OrthographicCamera(-145,145,145,-145,.1,420);
 mapCamera.up.set(0,0,-1);mapCamera.position.set(0,170,-15);mapCamera.lookAt(0,0,-15);
 let mapMode=false;
 const mapNotice=document.createElement("div");
-mapNotice.textContent="MAPA 3D DEL MUNDO · Pulsa M para volver";
+mapNotice.textContent="MAPA 3D DEL MUNDO · Pulsa M o el botón para volver";
 mapNotice.style.cssText="display:none;position:fixed;z-index:9000;top:16px;left:50%;transform:translateX(-50%);padding:11px 16px;border:1px solid #8da8ca;border-radius:10px;background:#08111de8;color:#e9f2ff;font:700 12px/1.4 system-ui;letter-spacing:1px;pointer-events:none;text-align:center";
 document.body.appendChild(mapNotice);
+// AETHER_MAP_UI_V2: visible map toggle for mouse, keyboard and touch devices.
+const mapButton=document.createElement("button");
+mapButton.type="button";mapButton.textContent="VER MAPA 3D";
+mapButton.style.cssText="display:none;position:fixed;z-index:9001;top:16px;right:16px;padding:12px 15px;border:1px solid #d5bc79;border-radius:9px;background:#14251deF;color:#fff4d5;font:800 12px/1 system-ui;letter-spacing:.6px;box-shadow:0 5px 18px #0006;cursor:pointer";
+document.body.appendChild(mapButton);
+function toggleWorldMap(){mapMode=!mapMode;mapNotice.style.display=mapMode?"block":"none";mapButton.textContent=mapMode?"VOLVER AL JUEGO":"VER MAPA 3D";}
+mapButton.addEventListener("click",toggleWorldMap);
+window.addEventListener("aether:character-ready",()=>{mapButton.style.display="block";});
 const controls=new PointerLockControls(camera,document.body);
 window.addEventListener("keydown",e=>{
-  if(e.code==="KeyM"&&controls.isLocked){
-    e.preventDefault();mapMode=!mapMode;mapNotice.style.display=mapMode?"block":"none";
+  if(e.code==="KeyM"&&window.__AETHER_CHARACTER){
+    e.preventDefault();toggleWorldMap();
   }
 });
  // AETHER_COMBAT_MODEL_V1: first-person weapon model so attacks have visible feedback.
@@ -479,7 +487,7 @@ let vy=0,onGround=true,health=100,attackCooldown=0;
 const clock=new THREE.Clock();
 addEventListener("keydown",e=>{keys[e.code]=true;if(e.code==="Space"&&onGround){vy=7;onGround=false}});
 addEventListener("keyup",e=>keys[e.code]=false);
-addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();const ar=innerWidth/innerHeight;mapCamera.left=-145*ar;mapCamera.right=145*ar;mapCamera.top=145;mapCamera.bottom=-145;mapCamera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
 // Start with character creation. Pointer lock is requested only after class selection.
 document.getElementById("startBtn").onclick=()=>{
   document.getElementById("start").style.display="none";
