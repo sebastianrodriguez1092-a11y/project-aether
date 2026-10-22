@@ -43,7 +43,7 @@ try {
   await page.waitForTimeout(900);
   await page.locator("#aetherMapButton").click();
   await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VOLVER"));
-  await page.screenshot({ path: "project-aether-smoke.png", fullPage: false });
+  await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, timeout: 30000, animations: "disabled" });
   await page.locator("#aetherMapButton").click();
   await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VER MAPA"));
 
