@@ -474,6 +474,8 @@ classCards.forEach(c=>c.addEventListener("click",()=>{
 classContinue.addEventListener("click",()=>{
  classSelect.style.display="none";
  if(typeof flashMessage==="function")flashMessage("ORIGEN: "+(selectedRace||"DESCONOCIDO")+" · CLASE: "+selectedClass);
+ // Desktop: lock the pointer after character creation so mouse-look and gameplay activate.
+ if(!mobileActive()) controls.lock();
 });
 
 </script>
