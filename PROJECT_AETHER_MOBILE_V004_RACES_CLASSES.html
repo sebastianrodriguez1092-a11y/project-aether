@@ -245,7 +245,13 @@ const clock=new THREE.Clock();
 addEventListener("keydown",e=>{keys[e.code]=true;if(e.code==="Space"&&onGround){vy=7;onGround=false}});
 addEventListener("keyup",e=>keys[e.code]=false);
 addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
-document.getElementById("startBtn").onclick=()=>controls.lock();
+// Start with character creation. Pointer lock is requested only after class selection.
+document.getElementById("startBtn").onclick=()=>{
+  document.getElementById("start").style.display="none";
+  raceSelect.style.display="flex";
+  raceSelect.style.zIndex="9999";
+  if(mobileActive()) mobileUI.style.display="block";
+};
 controls.addEventListener("lock",()=>document.getElementById("start").style.display="none");
 controls.addEventListener("unlock",()=>document.getElementById("start").style.display="flex");
 
