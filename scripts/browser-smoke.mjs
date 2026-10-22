@@ -43,9 +43,9 @@ try {
   await page.waitForTimeout(900);
   await page.locator("#aetherMapButton").click();
   await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VOLVER"));
-  await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, timeout: 30000, animations: "disabled" });
   await page.locator("#aetherMapButton").click();
   await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VER MAPA"));
+  console.log("Browser diagnostics:", JSON.stringify(await page.evaluate(() => ({webgl:document.querySelector("#game")?.getAttribute("data-engine"),texture:window.__AETHER_TEXTURE_STATUS,character:window.__AETHER_CHARACTER,mapButton:getComputedStyle(document.querySelector("#aetherMapButton")).zIndex}))));
 
   const visibleError = await page.locator("#aetherErrorPanel").count()
     ? await page.locator("#aetherErrorPanel").innerText()
