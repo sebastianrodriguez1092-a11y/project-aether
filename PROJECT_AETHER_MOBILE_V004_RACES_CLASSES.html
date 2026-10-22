@@ -262,11 +262,13 @@ ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 // AETHER_PHOTO_TEXTURES_V1: load real tiling terrain imagery from the official Three.js public texture set.
 // The generated canvas map above stays active if the external asset cannot be reached.
 const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin("anonymous");
+window.__AETHER_TEXTURE_STATUS="loading";
 textureLoader.load("https://threejs.org/examples/textures/terrain/grasslight-big.jpg",tex=>{
+  window.__AETHER_TEXTURE_STATUS="loaded";
   tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(22,22);
   tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   matGround.map=tex;matGround.color.setHex(0xa4b68a);matGround.needsUpdate=true;
-},undefined,()=>{});
+},undefined,()=>{window.__AETHER_TEXTURE_STATUS="fallback";});
 // The upstream terrain pack has no matching normal map; avoid a broken network request.
 const mapPlayerMarker=new THREE.Mesh(new THREE.ConeGeometry(1.25,2.4,3),new THREE.MeshBasicMaterial({color:0x54f4ff,depthTest:false}));
 mapPlayerMarker.rotation.x=Math.PI/2;mapPlayerMarker.renderOrder=20;scene.add(mapPlayerMarker);
