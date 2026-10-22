@@ -325,6 +325,31 @@ for(let i=0;i<aetherTreeCount;i++){
 aetherTrunks.castShadow=true;aetherTrunks.receiveShadow=true;scene.add(aetherTrunks);
 for(const canopy of aetherCrowns){canopy.castShadow=true;canopy.receiveShadow=true;scene.add(canopy);}
 
+// AETHER_FACTION_BANNERS_V1: strong faction colors and a readable route through the level.
+const aetherPathMat=new THREE.MeshStandardMaterial({color:0xc0a16c,roughness:1});
+const aetherPathGeo=new THREE.BoxGeometry(2.1,.055,1.55);
+const aetherPath=new THREE.InstancedMesh(aetherPathGeo,aetherPathMat,34);
+const aetherPathDummy=new THREE.Object3D();
+for(let i=0;i<34;i++){
+ const z=5-i*1.85;
+ aetherPathDummy.position.set(Math.sin(i*.16)*1.2,.04,z);
+ aetherPathDummy.rotation.set(0,Math.sin(i*.22)*.045,0);
+ const sc=.75+aetherRand()*.45;
+ aetherPathDummy.scale.set(sc,1,.8+aetherRand()*.4);
+ aetherPathDummy.updateMatrix();aetherPath.setMatrixAt(i,aetherPathDummy.matrix);
+}
+aetherPath.receiveShadow=true;scene.add(aetherPath);
+const aetherBannerBlue=new THREE.MeshStandardMaterial({color:0x2355a8,roughness:.82,side:THREE.DoubleSide});
+const aetherBannerGold=new THREE.MeshStandardMaterial({color:0xe3b64c,roughness:.78,metalness:.12,side:THREE.DoubleSide});
+const aetherBannerPoleMat=new THREE.MeshStandardMaterial({color:0x5b4632,roughness:.9});
+for(const side of [-1,1]){
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,7.5,7),aetherBannerPoleMat);
+ pole.position.set(side*8.5,3.75,-29);pole.castShadow=true;scene.add(pole);
+ const flag=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.7,1,1),side<0?aetherBannerBlue:aetherBannerGold);
+ flag.position.set(side*8.5,5.7,-28.92);flag.rotation.y=side<0?.12:-.12;scene.add(flag);
+ const crest=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),side<0?aetherBannerGold:aetherBannerBlue);
+ crest.position.set(side*8.5,5.8,-28.82);crest.scale.y=1.3;scene.add(crest);
+}
 // Ruined walls / arches
 for(let z=-8;z>-48;z-=8){
   box(-10,2,z,2.2,4,7,stone);
