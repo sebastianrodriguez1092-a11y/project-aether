@@ -169,7 +169,8 @@ moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
 camera.position.set(0,2.1,18);
 // AETHER_3D_WORLD_MAP_V1: full-scene orthographic survey mode; press M during play.
-const mapCamera=new THREE.OrthographicCamera(-145,145,145,-145,.1,420);
+const mapAspect=innerWidth/innerHeight;
+const mapCamera=new THREE.OrthographicCamera(-145*mapAspect,145*mapAspect,145,-145,.1,420);
 mapCamera.up.set(0,0,-1);mapCamera.position.set(0,170,-15);mapCamera.lookAt(0,0,-15);
 let mapMode=false;
 const mapNotice=document.createElement("div");
@@ -206,7 +207,7 @@ scene.add(camera);
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
 // AETHER_ADAPTIVE_QUALITY_V1: automatically trades post-processing/resolution for frame stability.
-let perfScale=Math.min(devicePixelRatio||1,1.5),perfWindow=0,perfFrames=0,lowPerfMode=false,slowWindows=0,fastWindows=0;
+let perfScale=Math.min(devicePixelRatio||1,1.25),perfWindow=0,perfFrames=0,lowPerfMode=false,slowWindows=0,fastWindows=0;
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.45,0.65,0.82);
 composer.addPass(bloom);
 
@@ -621,7 +622,7 @@ function loop(){
     if(slowWindows>=2&&!lowPerfMode){lowPerfMode=true;slowWindows=0;}
     if(fastWindows>=4&&lowPerfMode){lowPerfMode=false;fastWindows=0;}
     if(avg>.021&&perfScale>1){perfScale=Math.max(1,perfScale-.1);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
-    else if(avg<.015&&perfScale<Math.min(devicePixelRatio||1,1.5)){perfScale=Math.min(Math.min(devicePixelRatio||1,1.5),perfScale+.05);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
+    else if(avg<.015&&perfScale<Math.min(devicePixelRatio||1,1.5)){perfScale=Math.min(Math.min(devicePixelRatio||1,1.25),perfScale+.05);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
     perfWindow=0;perfFrames=0;
   }
   // Map mode shows the entire 3D level from above; gameplay adapts post-processing to performance.
