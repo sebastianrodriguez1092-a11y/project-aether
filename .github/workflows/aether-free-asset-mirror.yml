@@ -1,0 +1,60 @@
+name: Aether Free Asset Mirror
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mirror:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download CC0 / free-for-game assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/aether/characters assets/aether/environments assets/aether/creatures
+          curl -L --fail --retry 3 -o assets/aether/characters/ashfen-ranger.glb https://assetyard.dev/pack/files/ashfen-ranger.glb
+          curl -L --fail --retry 3 -o assets/aether/characters/vale-shieldmaiden.glb https://assetyard.dev/pack/files/vale-shieldmaiden.glb
+          curl -L --fail --retry 3 -o assets/aether/characters/hollow-warden.glb https://assetyard.dev/pack/files/hollow-warden.glb
+          curl -L --fail --retry 3 -o assets/aether/environments/last-gate.glb https://assetyard.dev/pack/files/environment-town.glb
+          curl -L --fail --retry 3 -o assets/aether/environments/warden-vault.glb https://assetyard.dev/pack/files/environment-vault.glb
+          curl -L --fail --retry 3 -o assets/aether/creatures/gloom-stalker.glb https://assetyard.dev/pack/files/gloom-stalker.glb
+          curl -L --fail --retry 3 -o assets/aether/creatures/ashfen-dragon.glb https://assetyard.dev/pack/files/ashfen-dragon.glb
+          printf '%s  %s\n' \
+            1d38fa13a99c2aa9f928735be363e7a3f74a927d9bf00d3e691dfe496073df0f assets/aether/characters/ashfen-ranger.glb \
+            06ff3473344df33d609cfb61560b7991441bf2376f63536270e685ca42db6d81 assets/aether/characters/vale-shieldmaiden.glb \
+            b53d3edfb8c41c462e457647f87f733adc2db775938e113b6297e007e6ba9395 assets/aether/characters/hollow-warden.glb \
+            2a3c36f9008b0d0f4171d1223858a5a4f750a1b072eb2031c0fa7c5cdd9a4cc1 assets/aether/environments/last-gate.glb \
+            f7a3d46e9086940824e9b02dd08b93b8eeca9515beda0da5d2547b1ee5e0d1d8 assets/aether/environments/warden-vault.glb \
+            969c84f4a81ad2b3a0eef0ed0bd14b59b2a75fb9d69549b3b9ae919bce0c1300 assets/aether/creatures/gloom-stalker.glb \
+            6b186fc59acc61dd7d678839542a8472ee825ad071a695e2cc7aa6f5b63e93eb assets/aether/creatures/ashfen-dragon.glb \
+            > /tmp/aether.sha256
+          sha256sum -c /tmp/aether.sha256
+      - name: Record asset licenses and sources
+        shell: bash
+        run: |
+          cat > assets/aether/ASSET_SOURCES.md <<'EOF'
+          # Aether external asset manifest
+
+          These assets are mirrored for the game runtime from Asset Yard's published HOLLOWREACH free pack.
+          Source: https://assetyard.dev/samples/
+
+          Character assets: Ashfen Ranger, Vale Shieldmaiden, Hollow Warden.
+          Environment assets: The Last Gate, The Warden's Vault.
+          Creature assets: Gloom Stalker, Ashfen Dragon.
+
+          The source page describes the HOLLOWREACH pack as free for game use. Before any commercial release, re-check the current model-specific license/terms listed by the source provider.
+          EOF
+      - name: Commit mirrored assets
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/aether
+          if git diff --cached --quiet; then echo 'No asset changes'; exit 0; fi
+          git commit -m 'AETHER: mirror free high-detail GLB asset pack'
+          git push
