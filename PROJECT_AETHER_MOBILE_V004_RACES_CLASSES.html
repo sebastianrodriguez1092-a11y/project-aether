@@ -177,7 +177,7 @@ mapNotice.textContent="MAPA 3D DEL MUNDO · Pulsa M o el botón para volver";
 mapNotice.style.cssText="display:none;position:fixed;z-index:9000;top:16px;left:50%;transform:translateX(-50%);padding:11px 16px;border:1px solid #8da8ca;border-radius:10px;background:#08111de8;color:#e9f2ff;font:700 12px/1.4 system-ui;letter-spacing:1px;pointer-events:none;text-align:center";
 document.body.appendChild(mapNotice);
 // AETHER_MAP_UI_V2: visible map toggle for mouse, keyboard and touch devices.
-const mapButton=document.createElement("button");
+const mapButton=document.createElement("button");mapButton.id="aetherMapButton";
 mapButton.type="button";mapButton.textContent="VER MAPA 3D";
 mapButton.style.cssText="display:none;position:fixed;z-index:9001;top:16px;right:16px;padding:12px 15px;border:1px solid #d5bc79;border-radius:9px;background:#14251deF;color:#fff4d5;font:800 12px/1 system-ui;letter-spacing:.6px;box-shadow:0 5px 18px #0006;cursor:pointer";
 document.body.appendChild(mapButton);
