@@ -18,7 +18,11 @@ try {
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
   const pageErrors = [];
+  const consoleErrors = [];
+  const failedRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
+  page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
+  page.on("requestfailed", req => failedRequests.push({url:req.url(),error:req.failure()?.errorText}));
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForFunction(() => window.__AETHER_3D_READY === true, undefined, { timeout: 30000 });
   await page.waitForFunction(() => window.__AETHER_TEXTURE_STATUS && window.__AETHER_TEXTURE_STATUS !== "loading", undefined, { timeout: 20000 });
