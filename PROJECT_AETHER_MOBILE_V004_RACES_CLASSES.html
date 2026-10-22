@@ -183,9 +183,9 @@ import {UnrealBloomPass} from "https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 
 const canvas=document.getElementById("game");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.0));
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=innerWidth>1100 && (!navigator.hardwareConcurrency || navigator.hardwareConcurrency>=8);
+renderer.shadowMap.enabled=innerWidth>760 && (!navigator.hardwareConcurrency || navigator.hardwareConcurrency>=4);
 renderer.shadowMap.type=THREE.PCFShadowMap;
 renderer.info.autoReset=true;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -259,7 +259,7 @@ scene.add(camera);
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
 // AETHER_ADAPTIVE_QUALITY_V1: automatically trades post-processing/resolution for frame stability.
-let perfScale=Math.min(devicePixelRatio||1,1.0),perfWindow=0,perfFrames=0,lowPerfMode=true,slowWindows=0,fastWindows=0;
+let perfScale=Math.min(devicePixelRatio||1,1.25),perfWindow=0,perfFrames=0,lowPerfMode=innerWidth<=800,slowWindows=0,fastWindows=0;
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.28,0.55,0.88);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -268,7 +268,7 @@ const hemi=new THREE.HemisphereLight(0xd8efff,0x4c6946,1.8);
 scene.add(hemi);
 const moon=new THREE.DirectionalLight(0xffdfa0,2.5);
 moon.position.set(-30,45,20); moon.castShadow=true;
-moon.shadow.mapSize.set(1024,1024);
+moon.shadow.mapSize.set(innerWidth>1100?2048:1024,innerWidth>1100?2048:1024);
 moon.shadow.camera.left=-70;moon.shadow.camera.right=70;moon.shadow.camera.top=70;moon.shadow.camera.bottom=-70;
 scene.add(moon);
 
@@ -694,6 +694,43 @@ function update(dt){
   else if(nearGate&&enemy.dead){prompt.style.display="block";prompt.textContent="HAS ALCANZADO LA PUERTA · PRÓLOGO COMPLETADO.";const objective=document.getElementById("objective");if(objective)objective.textContent="PRÓLOGO COMPLETADO · El Umbral te espera.";}
   else if(controls.isLocked&&prompt.textContent!==""){prompt.style.display="none"}
 }
+
+
+/* AETHER_CINEMATIC_ENVIRONMENT_V2: richer, lightweight procedural detail. */
+function addAetherAtmosphere(){
+  // Soft drifting motes add scale and depth without external paid assets.
+  const count=420, positions=new Float32Array(count*3), colors=new Float32Array(count*3), sizes=[];
+  let seed=77931;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+  for(let i=0;i<count;i++){
+    positions[i*3]=(rnd()-.5)*100;positions[i*3+1]=.8+rnd()*17;positions[i*3+2]=(rnd()-.5)*100;
+    const warmMote=rnd()>.52;colors[i*3]=warmMote?1:.28;colors[i*3+1]=warmMote?.72:.72;colors[i*3+2]=warmMote?.38:1;
+  }
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(positions,3));pg.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  const pm=new THREE.PointsMaterial({size:.12,vertexColors:true,transparent:true,opacity:.68,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+  const motes=new THREE.Points(pg,pm);motes.name='Aether atmospheric motes';scene.add(motes);
+  // Instanced low-poly grass tufts and tiny pale flowers break up the flat terrain.
+  const grassGeo=new THREE.ConeGeometry(.075,.42,4);grassGeo.translate(0,.2,0);
+  const grassMat=new THREE.MeshStandardMaterial({color:0x526e3c,roughness:1});
+  const grassCount=1500,grass=new THREE.InstancedMesh(grassGeo,grassMat,grassCount),dummy=new THREE.Object3D();
+  for(let i=0;i<grassCount;i++){
+    const x=(rnd()-.5)*190,z=(rnd()-.5)*190;
+    // Keep the central path clear so the player and combat remain readable.
+    if(Math.abs(x)<5.5)dummy.scale.setScalar(.001);
+    else dummy.scale.set(.65+rnd()*.9,.55+rnd()*1.1,.65+rnd()*.9);
+    dummy.position.set(x,.02,z);dummy.rotation.set(0,rnd()*Math.PI, (rnd()-.5)*.22);dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix);
+  }
+  grass.instanceMatrix.needsUpdate=true;grass.castShadow=false;grass.receiveShadow=true;scene.add(grass);
+  const flowerGeo=new THREE.SphereGeometry(.055,6,5),flowerMat=new THREE.MeshStandardMaterial({color:0xd7c8ff,emissive:0x30234c,emissiveIntensity:.3,roughness:.8});
+  const flowers=new THREE.InstancedMesh(flowerGeo,flowerMat,180);
+  for(let i=0;i<180;i++){const x=(rnd()-.5)*160,z=(rnd()-.5)*160;dummy.position.set(x,.18,z);dummy.scale.setScalar(.6+rnd()*.7);dummy.rotation.set(0,rnd()*6,0);dummy.updateMatrix();flowers.setMatrixAt(i,dummy.matrix);}
+  flowers.instanceMatrix.needsUpdate=true;scene.add(flowers);
+  // A secondary cool rim light gives armor, ruins and crystals stronger separation.
+  const rim=new THREE.DirectionalLight(0x82baff,1.05);rim.position.set(24,18,-35);scene.add(rim);
+  const fill=new THREE.PointLight(0x438dff,7,42,2);fill.position.set(5,3,-10);scene.add(fill);
+  window.__AETHER_ENVIRONMENT_DETAIL_READY=true;
+  return {motes,pg};
+}
+const aetherAtmosphere=addAetherAtmosphere();
 
 function loop(){
   requestAnimationFrame(loop);
