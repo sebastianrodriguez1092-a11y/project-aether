@@ -66,5 +66,6 @@ let last=performance.now();function loop(t){requestAnimationFrame(loop);const dt
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
 window.__AETHER_NEW_ENGINE_READY=true;
 </script>
+<script type="module" src="./aether-character-bridge.js"></script>
 </body>
 </html>
