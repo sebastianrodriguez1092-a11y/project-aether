@@ -168,8 +168,20 @@ moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);
 
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
 camera.position.set(0,2.1,18);
-
+// AETHER_3D_WORLD_MAP_V1: full-scene orthographic survey mode; press M during play.
+const mapCamera=new THREE.OrthographicCamera(-112,112,112,-112,.1,420);
+mapCamera.up.set(0,0,-1);mapCamera.position.set(0,170,-15);mapCamera.lookAt(0,0,-15);
+let mapMode=false;
+const mapNotice=document.createElement("div");
+mapNotice.textContent="MAPA 3D DEL MUNDO · Pulsa M para volver";
+mapNotice.style.cssText="display:none;position:fixed;z-index:9000;top:16px;left:50%;transform:translateX(-50%);padding:11px 16px;border:1px solid #8da8ca;border-radius:10px;background:#08111de8;color:#e9f2ff;font:700 12px/1.4 system-ui;letter-spacing:1px;pointer-events:none;text-align:center";
+document.body.appendChild(mapNotice);
 const controls=new PointerLockControls(camera,document.body);
+window.addEventListener("keydown",e=>{
+  if(e.code==="KeyM"&&controls.isLocked){
+    e.preventDefault();mapMode=!mapMode;mapNotice.style.display=mapMode?"block":"none";
+  }
+});
 scene.add(camera);
 
 const composer=new EffectComposer(renderer);
@@ -226,6 +238,8 @@ for(let i=0;i<terrainPos.count;i++){
 terrainGeo.computeVertexNormals();
 const ground=new THREE.Mesh(terrainGeo,matGround);
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const mapPlayerMarker=new THREE.Mesh(new THREE.ConeGeometry(1.25,2.4,3),new THREE.MeshBasicMaterial({color:0x54f4ff,depthTest:false}));
+mapPlayerMarker.rotation.x=Math.PI/2;mapPlayerMarker.renderOrder=20;scene.add(mapPlayerMarker);
 
 function box(x,y,z,sx,sy,sz,mat=matGround){
   const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat);
@@ -445,7 +459,7 @@ function enemyAI(dt){
 }
 
 function update(dt){
-  if(!controls.isLocked)return;
+  if(!controls.isLocked||mapMode)return;
   const speed=keys.ShiftLeft||keys.ShiftRight?8.5:5.2;
   const dir=new THREE.Vector3();
   if(keys.KeyW)dir.z-=1;if(keys.KeyS)dir.z+=1;if(keys.KeyA)dir.x-=1;if(keys.KeyD)dir.x+=1;
@@ -483,8 +497,10 @@ function loop(){
     else if(avg<.015&&perfScale<Math.min(devicePixelRatio||1,1.5)){perfScale=Math.min(Math.min(devicePixelRatio||1,1.5),perfScale+.05);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
     perfWindow=0;perfFrames=0;
   }
-  // Mobile and low-end Macs skip bloom first; the world remains fully 3D.
-  if(innerWidth<=800||lowPerfMode) renderer.render(scene,camera); else composer.render();
+  // Map mode shows the entire 3D level from above; gameplay adapts post-processing to performance.
+  mapPlayerMarker.position.set(camera.position.x,.8,camera.position.z);
+  if(mapMode) renderer.render(scene,mapCamera);
+  else if(innerWidth<=800||lowPerfMode) renderer.render(scene,camera); else composer.render();
   const mp=moteGeo.attributes.position;
   for(let j=1;j<mp.array.length;j+=3){mp.array[j]+=.0005;if(mp.array[j]>12)mp.array[j]=.5;}
   mp.needsUpdate=true;
