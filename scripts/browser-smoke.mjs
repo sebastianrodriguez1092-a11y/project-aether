@@ -12,48 +12,30 @@ await new Promise(resolve => server.listen(4173, "127.0.0.1", resolve));
 
 let browser;
 try {
-  browser = await chromium.launch({
-    headless: true,
-    args: ["--no-sandbox", "--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
-  });
-  const page = await browser.newPage({ viewport: { width: 800, height: 600 }, deviceScaleFactor: 1 });
-  page.setDefaultTimeout(8000);
-  const pageErrors = [];
-  const consoleErrors = [];
-  const failedRequests = [];
+  browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  page.setDefaultTimeout(10000);
+  const pageErrors = [], consoleErrors = [], failedRequests = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
-  page.on("requestfailed", req => failedRequests.push({url:req.url(),error:req.failure()?.errorText}));
+  page.on("requestfailed", req => failedRequests.push({ url: req.url(), error: req.failure()?.errorText }));
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForTimeout(8000);
-  const startup = await page.evaluate(() => ({ready:window.__AETHER_3D_READY===true, error:document.querySelector("#aetherErrorPanel")?.innerText||"", texture:window.__AETHER_TEXTURE_STATUS||"not-started", canvas:!!document.querySelector("#game")}));
-  if (!startup.ready) throw new Error("3D startup failed: "+JSON.stringify({startup,pageErrors,consoleErrors,failedRequests}));
-  await page.waitForFunction(() => window.__AETHER_TEXTURE_STATUS && window.__AETHER_TEXTURE_STATUS !== "loading", undefined, { timeout: 20000 });
-  assert.equal(await page.evaluate(() => window.__AETHER_TEXTURE_STATUS), "loaded", "Real terrain image did not load");
+  await page.waitForFunction(() => window.__AETHER_NEW_ENGINE_READY === true, undefined, { timeout: 20000 });
   assert.ok(await page.locator("#game").count(), "3D canvas missing");
   assert.ok(await page.locator("#game").evaluate(c => c.width > 0 && c.height > 0), "3D canvas has no dimensions");
-
-  await page.locator("#startBtn").click();
-  await page.locator(".raceCard").first().click();
-  await page.locator("#raceContinue").click();
-  await page.waitForFunction(() => getComputedStyle(document.querySelector("#classSelect")).display !== "none");
-  await page.locator(".classCard").first().click();
-  await page.locator("#classContinue").click();
-  await page.waitForFunction(() => window.__AETHER_CHARACTER && document.querySelector("#aetherMapButton") && getComputedStyle(document.querySelector("#aetherMapButton")).display !== "none", undefined, { timeout: 10000 });
-  await page.waitForTimeout(900);
-  await page.locator("#aetherMapButton").click();
-  await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VOLVER"));
-  await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, timeout: 30000, animations: "disabled" });
-  await page.locator("#aetherMapButton").click();
-  await page.waitForFunction(() => document.querySelector("#aetherMapButton").textContent.includes("VER MAPA"));
-  console.log("Browser diagnostics:", JSON.stringify(await page.evaluate(() => ({webgl:document.querySelector("#game")?.getAttribute("data-engine"),texture:window.__AETHER_TEXTURE_STATUS,character:window.__AETHER_CHARACTER,mapButton:getComputedStyle(document.querySelector("#aetherMapButton")).zIndex}))));
-
-  const visibleError = await page.locator("#aetherErrorPanel").count()
-    ? await page.locator("#aetherErrorPanel").innerText()
-    : "";
-  assert.equal(visibleError, "", "Runtime error panel appeared: " + visibleError);
-  assert.deepEqual(pageErrors, [], "Uncaught browser exceptions occurred");
-  console.log("PASS: WebGL module loaded, race/class selection advanced, map opened/closed, no uncaught browser errors.");
+  await page.locator("#enter").click();
+  await page.waitForSelector(".race");
+  assert.equal(await page.locator(".race").count(), 6, "Six lineage cards are required");
+  await page.locator(".race").first().click();
+  await page.locator("#continue").click();
+  await page.waitForTimeout(1200);
+  assert.equal(await page.locator("#select").evaluate(el => getComputedStyle(el).display), "none", "Selection screen did not close");
+  assert.equal(await page.locator("#hud").evaluate(el => getComputedStyle(el).display), "block", "HUD did not activate");
+  await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, animations: "disabled" });
+  const visibleErrors = await page.locator("#aetherErrorPanel").count() ? await page.locator("#aetherErrorPanel").innerText() : "";
+  assert.equal(visibleErrors, "", "Runtime error panel appeared: " + visibleErrors);
+  assert.deepEqual(pageErrors, [], "Uncaught browser exceptions occurred: " + JSON.stringify({ pageErrors, consoleErrors, failedRequests }));
+  console.log("PASS: New Aether 3D engine loaded, six-lineage selection worked, game HUD activated, screenshot captured, no uncaught exceptions.");
 } finally {
   if (browser) await browser.close();
   await new Promise(resolve => server.close(resolve));
