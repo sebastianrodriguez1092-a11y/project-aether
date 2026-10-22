@@ -41,7 +41,24 @@ try {
   await page.locator("#continue").click();
   await page.waitForTimeout(1200);
   assert.equal(await page.locator("#select").evaluate(el => getComputedStyle(el).display), "none", "Selection screen did not close");
-  await page.waitForFunction(() => window.__AETHER_PROLOGUE_READY === true, undefined, { timeout: 15000 });
+  try {
+    await page.waitForFunction(() => window.__AETHER_PROLOGUE_READY === true, undefined, { timeout: 15000 });
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      ready: window.__AETHER_PROLOGUE_READY ?? false,
+      installed: window.__AETHER_PROLOGUE_INSTALLED ?? false,
+      error: window.__AETHER_PROLOGUE_ERROR ?? null,
+      startType: typeof window.AetherStartPrologue,
+      three: !!window.AetherThree,
+      bridge: !!document.querySelector('script[src*="aether-character-bridge"]'),
+      prologueScript: !!document.querySelector('script[src*="aether-prologue"]'),
+      prologueElement: !!document.getElementById('aetherPrologue'),
+      errorPanel: document.getElementById('aetherErrorPanel')?.textContent || ''
+    }));
+    console.error("AETHER_PROLOGUE_DEBUG", JSON.stringify({ state, pageErrors, consoleErrors, failedRequests }));
+    await page.screenshot({ path: "project-aether-prologue-debug.png", fullPage: false });
+    throw error;
+  }
   assert.ok(await page.locator("#aetherPrologue").count(), "3D cinematic prologue did not appear");
   assert.ok(await page.locator("#aetherPrologue canvas").count(), "Prologue 3D canvas missing");
   await page.screenshot({ path: "project-aether-smoke.png", fullPage: false, animations: "disabled" });
