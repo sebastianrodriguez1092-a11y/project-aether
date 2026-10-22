@@ -281,14 +281,37 @@ const stone=new THREE.MeshStandardMaterial({color:0xffffff,map:stoneTexture,roug
 const darkStone=new THREE.MeshStandardMaterial({color:0x777e88,map:stoneTexture,roughness:.86,metalness:.12});
 const crystal=new THREE.MeshStandardMaterial({color:0x5a8cff,emissive:0x244cff,emissiveIntensity:3.5,roughness:.2,metalness:.15});
 
-for(let i=0;i<24;i++){
-  const a=Math.random()*Math.PI*2,r=35+Math.random()*40;
-  const s=.8+Math.random()*2.8;
-  const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(s,1),stone);
-  rock.position.set(Math.cos(a)*r,s*.55,Math.sin(a)*r);
-  rock.scale.y=.55+Math.random()*.8;rock.castShadow=true;rock.receiveShadow=true;scene.add(rock);
+// AETHER_INSTANCED_ROCKS_V1: merge distant rubble into one draw call for lower render overhead.
+const rubbleGeo=new THREE.DodecahedronGeometry(1,1);
+const rubbleCount=54;
+const rubble=new THREE.InstancedMesh(rubbleGeo,stone,rubbleCount);
+const rubbleDummy=new THREE.Object3D();
+let rubbleSeed=12837;const rubbleRand=()=>{rubbleSeed=(rubbleSeed*1664525+1013904223)>>>0;return rubbleSeed/4294967296;};
+for(let i=0;i<rubbleCount;i++){
+ const a=rubbleRand()*Math.PI*2,r=18+rubbleRand()*72,scale=.45+rubbleRand()*2.3;
+ rubbleDummy.position.set(Math.cos(a)*r,scale*.42,Math.sin(a)*r);
+ rubbleDummy.rotation.set(rubbleRand()*.35,rubbleRand()*Math.PI,rubbleRand()*.35);
+ rubbleDummy.scale.set(scale,scale*(.4+rubbleRand()*.7),scale*(.7+rubbleRand()*.55));
+ rubbleDummy.updateMatrix();rubble.setMatrixAt(i,rubbleDummy.matrix);
 }
+rubble.castShadow=renderer.shadowMap.enabled;rubble.receiveShadow=true;scene.add(rubble);
 
+// AETHER_CLOUDSCAPE_V1: soft stylized cloud banks create a brighter, layered fantasy horizon.
+const cloudMat=new THREE.MeshStandardMaterial({color:0xf1f5ec,roughness:1,metalness:0,transparent:true,opacity:.82,depthWrite:false});
+const cloudGeo=new THREE.SphereGeometry(1,8,6);
+const cloudCount=38;
+const clouds=new THREE.InstancedMesh(cloudGeo,cloudMat,cloudCount);
+const cloudDummy=new THREE.Object3D();
+let cloudSeed=3381;const cloudRand=()=>{cloudSeed=(cloudSeed*1664525+1013904223)>>>0;return cloudSeed/4294967296;};
+for(let i=0;i<cloudCount;i++){
+ const side=cloudRand()>.5?1:-1;
+ const x=side*(20+cloudRand()*105),z=18-cloudRand()*150;
+ cloudDummy.position.set(x,25+cloudRand()*19,z);
+ cloudDummy.rotation.set(cloudRand()*.12,cloudRand()*Math.PI,cloudRand()*.12);
+ cloudDummy.scale.set(5+cloudRand()*10,1.3+cloudRand()*2.8,3+cloudRand()*7);
+ cloudDummy.updateMatrix();clouds.setMatrixAt(i,cloudDummy.matrix);
+}
+clouds.frustumCulled=false;scene.add(clouds);
 // AETHER_MOUNTAIN_COLOR_PASS_V1: blue-green distant ridgelines create depth without expensive effects.
 const aetherFarRidgeMat=new THREE.MeshStandardMaterial({color:0x9aafa9,roughness:1,flatShading:true});
 for(let i=0;i<16;i++){
