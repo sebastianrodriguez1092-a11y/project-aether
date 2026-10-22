@@ -140,10 +140,11 @@ import {UnrealBloomPass} from "https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 
 const canvas=document.getElementById("game");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.0));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=!(innerWidth<=800 || (navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4));
+renderer.shadowMap.enabled=innerWidth>1100 && (!navigator.hardwareConcurrency || navigator.hardwareConcurrency>=8);
 renderer.shadowMap.type=THREE.PCFShadowMap;
+renderer.info.autoReset=true;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.25;
@@ -173,7 +174,7 @@ moonHalo.position.copy(moonDisc.position);scene.add(moonHalo);mapHideObjects.pus
 
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,500);
 camera.rotation.order="YXZ";
-camera.position.set(0,2.1,18);
+camera.position.set(0,1.72,18);
 // AETHER_3D_WORLD_MAP_V1: full-scene orthographic survey mode; press M during play.
 const mapAspect=innerWidth/innerHeight;
 const mapCamera=new THREE.OrthographicCamera(-50*mapAspect,50*mapAspect,50,-50,.1,420);
@@ -198,7 +199,7 @@ window.addEventListener("keydown",e=>{
   }
 });
  // AETHER_COMBAT_MODEL_V1: first-person weapon model so attacks have visible feedback.
-const weaponRig=new THREE.Group();camera.add(weaponRig);weaponRig.position.set(.48,-.40,-.72);weaponRig.rotation.set(.12,-.08,-.28);
+const weaponRig=new THREE.Group();camera.add(weaponRig);weaponRig.position.set(.43,-.34,-.58);weaponRig.scale.set(1.22,1.22,1.22);weaponRig.rotation.set(.08,-.06,-.22);
 const weaponSteel=new THREE.MeshStandardMaterial({color:0x9daebe,metalness:.88,roughness:.22});
 const weaponGrip=new THREE.MeshStandardMaterial({color:0x241b20,metalness:.25,roughness:.72});
 const weaponRune=new THREE.MeshStandardMaterial({color:0x7dbbff,emissive:0x267aff,emissiveIntensity:2.2,metalness:.6,roughness:.2});
@@ -206,6 +207,8 @@ const blade=new THREE.Mesh(new THREE.BoxGeometry(.105,.92,.045),weaponSteel);bla
 const bladeEdge=new THREE.Mesh(new THREE.BoxGeometry(.025,.86,.05),weaponRune);bladeEdge.position.set(.057,.55,0);weaponRig.add(bladeEdge);
 const guard=new THREE.Mesh(new THREE.BoxGeometry(.36,.075,.09),weaponRune);guard.position.y=.05;weaponRig.add(guard);
 const grip=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.34,8),weaponGrip);grip.position.y=-.15;weaponRig.add(grip);
+const forearm=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.43,4,8),new THREE.MeshStandardMaterial({color:0x26384b,roughness:.82,metalness:.15}));forearm.position.set(-.035,-.20,.06);forearm.rotation.z=-.24;weaponRig.add(forearm);
+const bracer=new THREE.Mesh(new THREE.BoxGeometry(.24,.16,.19),weaponSteel);bracer.position.set(-.02,.02,.035);bracer.rotation.z=-.18;weaponRig.add(bracer);
 const pommel=new THREE.Mesh(new THREE.SphereGeometry(.075,8,8),weaponRune);pommel.position.y=-.34;weaponRig.add(pommel);
 let weaponSwing=0;
 scene.add(camera);
@@ -213,8 +216,8 @@ scene.add(camera);
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
 // AETHER_ADAPTIVE_QUALITY_V1: automatically trades post-processing/resolution for frame stability.
-let perfScale=Math.min(devicePixelRatio||1,1.25),perfWindow=0,perfFrames=0,lowPerfMode=false,slowWindows=0,fastWindows=0;
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.45,0.65,0.82);
+let perfScale=Math.min(devicePixelRatio||1,1.0),perfWindow=0,perfFrames=0,lowPerfMode=true,slowWindows=0,fastWindows=0;
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.28,0.55,0.88);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -628,8 +631,8 @@ function loop(){
     const avg=perfWindow/Math.max(1,perfFrames);
     if(avg>.024){slowWindows++;fastWindows=0;}else if(avg<.017){fastWindows++;slowWindows=0;}else{slowWindows=0;fastWindows=0;}
     if(slowWindows>=2&&!lowPerfMode){lowPerfMode=true;slowWindows=0;}
-    if(fastWindows>=4&&lowPerfMode){lowPerfMode=false;fastWindows=0;}
-    if(avg>.021&&perfScale>1){perfScale=Math.max(1,perfScale-.1);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
+    if(fastWindows>=4&&lowPerfMode&&innerWidth>1100&&navigator.hardwareConcurrency>=8){lowPerfMode=false;fastWindows=0;}
+    if(avg>.021&&perfScale>0.75){perfScale=Math.max(0.75,perfScale-.1);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
     else if(avg<.015&&perfScale<Math.min(devicePixelRatio||1,1.5)){perfScale=Math.min(Math.min(devicePixelRatio||1,1.25),perfScale+.05);renderer.setPixelRatio(perfScale);renderer.setSize(innerWidth,innerHeight,false);composer.setPixelRatio(perfScale);composer.setSize(innerWidth,innerHeight);}
     perfWindow=0;perfFrames=0;
   }
