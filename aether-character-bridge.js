@@ -1,6 +1,5 @@
-// AETHER_CHARACTER_BRIDGE_V4
+// AETHER_CHARACTER_BRIDGE_V5
 (()=>{
-const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 const loadScript=(src,attr,onload)=>{
   const selector=`script[data-${attr}="1"]`;
   const existing=document.querySelector(selector);
@@ -25,13 +24,11 @@ const loadScript=(src,attr,onload)=>{
 };
 
 const loadBackgroundAssets=()=>{
-  if(!window.__AETHER_DETAILED_CHARACTERS_READY)loadScript('./aether-character-upgrade.js?v=20261022f','aether-character-upgrade');
-  loadScript('./aether-visual-overhaul.js?v=20261022f','aether-visual-overhaul');
+  if(!window.__AETHER_DETAILED_CHARACTERS_READY)loadScript('./aether-character-upgrade.js?v=20261022g','aether-character-upgrade');
+  loadScript('./aether-visual-overhaul.js?v=20261022g','aether-visual-overhaul');
 };
 
-const preparePrologue=()=>{
-  loadScript('./aether-prologue.js?v=20261022f','aether-prologue');
-};
+const preparePrologue=()=>loadScript('./aether-prologue.js?v=20261022g','aether-prologue');
 
 const startPrologue=()=>{
   const launch=()=>{
@@ -41,18 +38,18 @@ const startPrologue=()=>{
   const script=document.querySelector('script[data-aether-prologue="1"]');
   if(script&&script.dataset.loaded==='1')launch();
   else if(script)script.addEventListener('load',launch,{once:true});
-  else loadScript('./aether-prologue.js?v=20261022f','aether-prologue',launch);
+  else loadScript('./aether-prologue.js?v=20261022g','aether-prologue',launch);
 };
 
 const bind=async()=>{
   loadBackgroundAssets();
   preparePrologue();
   try{
-    const THREE=await import(THREE_URL);
+    const THREE=await import('three');
     window.AetherThree=THREE;
     window.__AETHER_THREE_READY=true;
   }catch(error){
-    window.__AETHER_THREE_ERROR=error?.stack||error?.message||String(error);
+    window.__AETHER_THREE_ERROR=(error&&error.stack)||((error&&error.message)||String(error));
     console.error('[AETHER] Three.js bridge import failed',error);
     return;
   }
