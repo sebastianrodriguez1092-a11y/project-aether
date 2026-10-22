@@ -142,19 +142,19 @@ renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.15;
+renderer.toneMappingExposure=1.25;
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x070b13);
-scene.fog=new THREE.FogExp2(0x0b1220,0.009);
+scene.background=new THREE.Color(0x9bc7e8);
+scene.fog=new THREE.FogExp2(0x9bbbd0,0.0048);
 // AETHER_SKY_ATMOSPHERE_V1: procedural sky dome with a readable horizon and stars.
 function makeSkyTexture(){
   const c=document.createElement("canvas");c.width=1024;c.height=512;const g=c.getContext("2d");
   const grad=g.createLinearGradient(0,0,0,512);
-  grad.addColorStop(0,"#030711");grad.addColorStop(.38,"#101d32");grad.addColorStop(.72,"#344356");grad.addColorStop(1,"#6a6570");
+  grad.addColorStop(0,"#3474b4");grad.addColorStop(.36,"#65a9d6");grad.addColorStop(.72,"#b9d8e8");grad.addColorStop(1,"#f2d8a1");
   g.fillStyle=grad;g.fillRect(0,0,1024,512);
   let seed=4451;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
-  for(let i=0;i<420;i++){const x=rnd()*1024,y=rnd()*300,r=.35+rnd()*1.15;g.fillStyle="rgba(194,216,255,"+(.18+rnd()*.65)+")";g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+  for(let i=0;i<130;i++){const x=rnd()*1024,y=rnd()*210,r=.35+rnd()*.8;g.fillStyle="rgba(255,255,245,"+(.14+rnd()*.4)+")";g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
   const neb=g.createRadialGradient(690,210,5,690,210,240);neb.addColorStop(0,"rgba(88,110,166,.19)");neb.addColorStop(1,"rgba(15,24,45,0)");
   g.fillStyle=neb;g.fillRect(400,0,550,450);
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;return tex;
@@ -202,15 +202,15 @@ let perfScale=Math.min(devicePixelRatio||1,1.5),perfWindow=0,perfFrames=0,lowPer
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.45,0.65,0.82);
 composer.addPass(bloom);
 
-const hemi=new THREE.HemisphereLight(0x9db7e8,0x171b20,1.15);
+const hemi=new THREE.HemisphereLight(0xd8efff,0x4c6946,1.8);
 scene.add(hemi);
-const moon=new THREE.DirectionalLight(0xb9ccff,2.3);
+const moon=new THREE.DirectionalLight(0xffdfa0,2.5);
 moon.position.set(-30,45,20); moon.castShadow=true;
 moon.shadow.mapSize.set(1024,1024);
 moon.shadow.camera.left=-70;moon.shadow.camera.right=70;moon.shadow.camera.top=70;moon.shadow.camera.bottom=-70;
 scene.add(moon);
 
-const warm=new THREE.PointLight(0xffa45b,20,30,2);
+const warm=new THREE.PointLight(0xffbd68,12,30,2);
 warm.position.set(-3,4,2);scene.add(warm);
 
 // AETHER_WORLD_DETAIL_PASS_V1: procedural high-frequency ground texture, no paid assets.
@@ -237,7 +237,7 @@ function makeGroundTexture(){
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(18,18);
   t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
 }
-const matGround=new THREE.MeshStandardMaterial({color:0xffffff,map:makeGroundTexture(),roughness:1,metalness:0});
+const matGround=new THREE.MeshStandardMaterial({color:0xa4b68a,map:makeGroundTexture(),roughness:1,metalness:0});
 const terrainGeo=new THREE.PlaneGeometry(220,220,100,100);
 // Gentle side ridges; the central playable corridor remains flat for reliable movement.
 const terrainPos=terrainGeo.attributes.position;
@@ -255,7 +255,7 @@ const textureLoader=new THREE.TextureLoader();
 textureLoader.load("https://threejs.org/examples/textures/terrain/grasslight-big.jpg",tex=>{
   tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(22,22);
   tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
-  matGround.map=tex;matGround.color.setHex(0x747b78);matGround.needsUpdate=true;
+  matGround.map=tex;matGround.color.setHex(0xa4b68a);matGround.needsUpdate=true;
 },undefined,()=>{});
 // The upstream terrain pack has no matching normal map; avoid a broken network request.
 const mapPlayerMarker=new THREE.Mesh(new THREE.ConeGeometry(1.25,2.4,3),new THREE.MeshBasicMaterial({color:0x54f4ff,depthTest:false}));
